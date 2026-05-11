@@ -3,10 +3,14 @@
 namespace App\Services;
 
 use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
+/**
+ * BaileysClient — Laravel HTTP client wrapper for the Node.js microservice.
+ * All methods communicate via internal REST API on localhost:3000.
+ * Protected by X-Internal-Secret header.
+ */
 class BaileysClient
 {
     private string $baseUrl;
@@ -17,136 +21,170 @@ class BaileysClient
     {
         $this->baseUrl = rtrim(config('services.baileys.url', 'http://127.0.0.1:3000'), '/');
         $this->secret  = config('services.baileys.secret', '');
-        $this->timeout = 10;
+        $this->timeout = (int) config('services.baileys.timeout', 10);
     }
 
     // ─── Health ───────────────────────────────────────────────────────────────
 
-    /**
-     * Check if the Baileys Node.js service is reachable and healthy.
-     */
     public function health(): array
     {
         try {
-            $response = $this->get('/health', timeout: 5);
-
-            return [
-                'online'   => $response->successful(),
-                'status'   => $response->json('status', 'unknown'),
-                'sessions' => $response->json('sessions', 0),
-                'uptime'   => $response->json('uptime', 0),
-            ];
-            // return [
-            //     'online'   => false,
-            //     'status'   => 'unreachable',
-            //     'sessions' => 0,
-            //     'uptime'   => 0,
-            // ];
-        } catch (ConnectionException $e) {
-            Log::warning('Baileys service unreachable', ['error' => $e->getMessage()]);
-
-            return [
-                'online'   => false,
-                'status'   => 'unreachable',
-                'sessions' => 0,
-                'uptime'   => 0,
-                'error'    => $e->getMessage(),
-            ];
+            $res = $this->http()->get('/health');
+            return array_merge(['online' => $res->successful()], $res->json() ?? []);
+        } catch (ConnectionException) {
+            return ['online' => false, 'sessions' => 0, 'error' => 'Service unreachable'];
+        } catch (\Throwable $e) {
+            return ['online' => false, 'sessions' => 0, 'error' => $e->getMessage()];
         }
     }
 
-    // ─── Session management (Phase 2 — stubs in Phase 1) ─────────────────────
+    // ─── Session lifecycle ────────────────────────────────────────────────────
 
     /**
-     * Initialise a new Baileys session for the given instance_token.
-     * Phase 1: returns 501 stub. Phase 2: real implementation.
+     * Initialise a new Baileys session.
+     * Returns immediately — QR is delivered via Pusher callback.
      */
     public function createSession(string $instanceToken): array
     {
-        return $this->post("/instance/{$instanceToken}/create");
+        try {
+            $res = $this->http()->post("/instance/{$instanceToken}/create");
+            return $res->json() ?? ['success' => false];
+        } catch (\Throwable $e) {
+            Log::error("BaileysClient::createSession failed: {$e->getMessage()}");
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 
     /**
-     * Get the current QR code (base64 PNG) for an unconnected session.
+     * Get current QR code (base64 PNG) for an instance awaiting scan.
      */
     public function getQrCode(string $instanceToken): array
     {
-        return $this->get("/instance/{$instanceToken}/qr")->json();
+        try {
+            $res = $this->http()->get("/instance/{$instanceToken}/qr");
+            return $res->json() ?? ['success' => false];
+        } catch (\Throwable $e) {
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
     }
 
     /**
-     * Get the live connection status of an instance.
+     * Get live connection status from Baileys service.
      */
     public function getStatus(string $instanceToken): array
     {
-        return $this->get("/instance/{$instanceToken}/status")->json();
+        try {
+            $res = $this->http()->get("/instance/{$instanceToken}/status");
+            return $res->json() ?? ['status' => 'unknown'];
+        } catch (\Throwable $e) {
+            return ['status' => 'unreachable', 'error' => $e->getMessage()];
+        }
     }
 
     /**
-     * Gracefully logout and destroy a Baileys session.
+     * Get WhatsApp account info for a connected instance.
      */
-    public function logout(string $instanceToken): array
+    public function getAccountInfo(string $instanceToken): array
     {
-        return $this->post("/instance/{$instanceToken}/logout");
+        try {
+            $res = $this->http()->get("/instance/{$instanceToken}/account-info");
+            return $res->json('data') ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
     }
 
     /**
-     * Delete all session data for an instance (called after grace period).
+     * Gracefully logout and clear session from Baileys.
      */
-    public function deleteSession(string $instanceToken): array
+    public function logout(string $instanceToken): bool
     {
-        return $this->delete("/instance/{$instanceToken}");
+        try {
+            $res = $this->http()->post("/instance/{$instanceToken}/logout");
+            return $res->successful();
+        } catch (\Throwable $e) {
+            Log::error("BaileysClient::logout failed: {$e->getMessage()}");
+            return false;
+        }
     }
 
-    // ─── Messaging (Phase 3 — stubs in Phase 1) ──────────────────────────────
-
-    public function sendMessage(string $instanceToken, array $payload): array
+    /**
+     * Hard-delete session data from Baileys (called after grace period).
+     */
+    public function deleteSession(string $instanceToken): bool
     {
-        return $this->post("/instance/{$instanceToken}/send", $payload);
+        try {
+            $res = $this->http()->delete("/instance/{$instanceToken}");
+            return $res->successful();
+        } catch (\Throwable $e) {
+            Log::error("BaileysClient::deleteSession failed: {$e->getMessage()}");
+            return false;
+        }
     }
 
-    // ─── HTTP helpers ─────────────────────────────────────────────────────────
+    // ─── Messaging ────────────────────────────────────────────────────────────
 
-    private function http(int $timeout = 0): \Illuminate\Http\Client\PendingRequest
+    /**
+     * Send any message type through a connected instance.
+     * Returns ['success', 'wa_message_id', 'timestamp'] on success.
+     */
+    public function send(string $instanceToken, array $payload): array
+    {
+        try {
+            $res = $this->http()->timeout($this->timeout)->post(
+                "/instance/{$instanceToken}/send",
+                $payload
+            );
+
+            if ($res->successful()) {
+                return $res->json() ?? ['success' => false];
+            }
+
+            Log::warning("BaileysClient::send non-2xx: {$res->status()}", $res->json() ?? []);
+            return [
+                'success' => false,
+                'message' => $res->json('message') ?? "HTTP {$res->status()}",
+            ];
+        } catch (ConnectionException $e) {
+            return ['success' => false, 'message' => 'Baileys service unreachable.'];
+        } catch (\Throwable $e) {
+            Log::error("BaileysClient::send error: {$e->getMessage()}");
+            return ['success' => false, 'message' => $e->getMessage()];
+        }
+    }
+
+    // ─── Groups ───────────────────────────────────────────────────────────────
+
+    public function getGroups(string $instanceToken): array
+    {
+        try {
+            $res = $this->http()->get("/instance/{$instanceToken}/groups");
+            return $res->json('data') ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    public function getGroupMeta(string $instanceToken, string $groupJid): array
+    {
+        try {
+            $res = $this->http()->get("/instance/{$instanceToken}/groups/{$groupJid}");
+            return $res->json('data') ?? [];
+        } catch (\Throwable $e) {
+            return [];
+        }
+    }
+
+    // ─── HTTP client factory ─────────────────────────────────────────────────
+
+    private function http()
     {
         return Http::baseUrl($this->baseUrl)
-            ->timeout($timeout ?: $this->timeout)
             ->withHeaders([
                 'X-Internal-Secret' => $this->secret,
                 'Accept'            => 'application/json',
                 'Content-Type'      => 'application/json',
             ])
-            ->throw(); // Handle errors manually
-    }
-
-    private function get(string $path, int $timeout = 0): Response
-    {
-        return $this->http($timeout)->get($path);
-    }
-
-    private function post(string $path, array $data = [], int $timeout = 0): array
-    {
-        try {
-            $response = $this->http($timeout)->post($path, $data);
-
-            if ($response->status() === 501) {
-                return ['success' => false, 'message' => 'Not implemented yet (Phase 1)'];
-            }
-
-            return $response->json() ?? [];
-        } catch (ConnectionException $e) {
-            Log::error('BaileysClient POST failed', ['path' => $path, 'error' => $e->getMessage()]);
-            return ['success' => false, 'error' => 'Service unreachable'];
-        }
-    }
-
-    private function delete(string $path): array
-    {
-        try {
-            return $this->http()->delete($path)->json() ?? [];
-        } catch (ConnectionException $e) {
-            Log::error('BaileysClient DELETE failed', ['path' => $path, 'error' => $e->getMessage()]);
-            return ['success' => false, 'error' => 'Service unreachable'];
-        }
+            ->timeout($this->timeout);
     }
 }

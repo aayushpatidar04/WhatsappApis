@@ -6,6 +6,7 @@ use App\Models\Client;
 use App\Models\User;
 use App\Models\WhatsappInstance;
 use App\Services\BaileysClient;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,7 +21,7 @@ class DashboardController extends Controller
 
     public function userDashboard(): Response
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $instances = WhatsappInstance::ownedBy($user->id, 'user')
             ->whereNull('deleted_at')
@@ -48,7 +49,7 @@ class DashboardController extends Controller
 
     public function userInstances(): Response
     {
-        $user = auth()->user();
+        $user = Auth::user();
 
         $instances = WhatsappInstance::ownedBy($user->id, 'user')
             ->whereNull('deleted_at')
@@ -80,7 +81,7 @@ class DashboardController extends Controller
 
     public function userTokens(): Response
     {
-        $tokens = auth()->user()
+        $tokens = Auth::user()
             ->apiTokens()
             ->active()
             ->orderByDesc('created_at')
@@ -93,7 +94,7 @@ class DashboardController extends Controller
 
     public function clientDashboard(): Response
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $client = $user->client;
 
         $allInstances = WhatsappInstance::where('client_id', $client->id)
@@ -122,7 +123,7 @@ class DashboardController extends Controller
 
     public function clientInstances(): Response
     {
-        $user = auth()->user();
+        $user = Auth::user();
         $client = $user->client;
 
         // Client admin sees ALL instances in the tenant (both client-owned and user-owned)

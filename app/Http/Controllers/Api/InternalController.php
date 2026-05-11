@@ -8,6 +8,8 @@ use App\Models\InstanceAuthState;
 use App\Models\InstanceEvent;
 use App\Models\WhatsappInstance;
 use App\Services\CreditService;
+use App\Services\MessageService;
+use App\Services\WebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -23,8 +25,11 @@ use Illuminate\Support\Facades\Log;
  */
 class InternalController extends Controller
 {
-    public function __construct(private readonly CreditService $creditService)
-    {
+    public function __construct(
+        private readonly CreditService $creditService,
+        private readonly MessageService $messageService,
+        private readonly WebhookService $webhookService,
+    ) {
     }
 
     /**
@@ -151,9 +156,7 @@ class InternalController extends Controller
 
         $instance->update($updateData);
 
-        Log::info(
-            "Instance connected: {$instance->id} | Phone: " . ($payload['phone_number'] ?? 'unknown')
-        );
+        Log::info("Instance connected: {$instance->id} | Phone: " . ($payload['phone_number'] ?? 'unknown'));
 
     }
 
@@ -169,17 +172,34 @@ class InternalController extends Controller
 
     private function onLoggedOut(WhatsappInstance $instance): void
     {
-        $instance->update([
-            'status' => WhatsappInstance::STATUS_SUSPENDED,
-            'phone_number' => null,
-            'suspended_at' => now(),
-        ]);
+        // Calculate remaining credits
+        $remaining = $instance->credits_assigned - $instance->credits_consumed;
 
-        // Delete auth state since session is cleared
+        if ($remaining <= 0) {
+            // ❌ No credits left → suspend
+            $instance->update([
+                'status' => WhatsappInstance::STATUS_SUSPENDED,
+                'phone_number' => null,
+                'suspended_at' => now(),
+            ]);
+            Log::info("Instance suspended (credits exhausted): {$instance->id}");
+        } else {
+            // ✅ Credits still available → reset to pending
+            $instance->update([
+                'status' => WhatsappInstance::STATUS_PENDING,
+                'phone_number' => null,
+                'session_data' => null,
+                'last_connected_at' => null,
+                'reconnect_attempts' => 0,
+            ]);
+            Log::info("Instance manually logged out → pending: {$instance->id}");
+        }
+
+        // Always clear auth state since session is destroyed
         InstanceAuthState::where('instance_token', $instance->instance_token)->delete();
-
-        Log::info("Instance logged out: {$instance->id}");
     }
+
+
 
     private function onMaxReconnects(WhatsappInstance $instance): void
     {
@@ -195,14 +215,35 @@ class InternalController extends Controller
 
     private function onInboundMessage(WhatsappInstance $instance, array $payload): void
     {
-        // Phase 3 will store and forward inbound messages to webhooks.
-        // In Phase 2 we just log and broadcast.
-        Log::info("Inbound message on instance {$instance->id} from {$payload['from_jid']}");
+        try {
+            // Store in DB
+            $message = $this->messageService->storeInbound($instance, $payload);
+
+            // Deliver to registered webhooks
+            $this->webhookService->deliver($instance, 'message.inbound', [
+                'instance_token' => $instance->instance_token,
+                'from' => $payload['from_jid'],
+                'type' => $payload['type'] ?? 'text',
+                'body' => $payload['body'],
+                'wa_message_id' => $payload['wa_message_id'],
+                'timestamp' => $payload['timestamp'],
+            ], $message);
+
+        } catch (\Throwable $e) {
+            Log::error("Failed to process inbound message for instance {$instance->id}: {$e->getMessage()}");
+        }
     }
 
     private function onMessageAck(WhatsappInstance $instance, array $payload): void
     {
-        // Phase 3 will update message status in DB.
-        Log::debug("ACK on instance {$instance->id}: msg={$payload['wa_message_id']} status={$payload['status']}");
+        try {
+            $this->messageService->applyAck(
+                $instance->instance_token,
+                $payload['wa_message_id'] ?? '',
+                (int) ($payload['status'] ?? 0),
+            );
+        } catch (\Throwable $e) {
+            Log::error("Failed to apply ACK for instance {$instance->id}: {$e->getMessage()}");
+        }
     }
 }

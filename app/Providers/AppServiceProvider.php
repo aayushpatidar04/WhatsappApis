@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Http\Middleware\ApiTokenAuthentication;
 use App\Http\Middleware\EnsureUserIsActive;
+use App\Http\Middleware\InternalSecretMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Services\BaileysClient;
 use App\Services\CreditService;
@@ -18,7 +19,6 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        // Register services as singletons
         $this->app->singleton(BaileysClient::class);
         $this->app->singleton(CreditService::class);
         $this->app->singleton(TokenService::class);
@@ -35,13 +35,14 @@ class AppServiceProvider extends ServiceProvider
 
     private function configureRateLimiting(): void
     {
-        // HTTP API rate limiting (separate from message rate limiting)
+        // Rate limit for external gateway API (api.php routes)
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(100)->by($request->user()?->id ?: $request->ip());
         });
 
+        // Rate limit for login attempts (web.php route)
         RateLimiter::for('login', function (Request $request) {
-            return Limit::perMinute(5)->by($request->input('email').$request->ip());
+            return Limit::perMinute(5)->by($request->input('email') . $request->ip());
         });
     }
 
@@ -49,8 +50,16 @@ class AppServiceProvider extends ServiceProvider
     {
         $router = $this->app['router'];
 
-        $router->aliasMiddleware('role',   RoleMiddleware::class);
+        // Used in web.php — checks user role
+        $router->aliasMiddleware('role', RoleMiddleware::class);
+
+        // Used in web.php — checks user is_active
         $router->aliasMiddleware('active', EnsureUserIsActive::class);
+
+        // Used in api.php (gateway group) — validates Bearer token from api_tokens table
         $router->aliasMiddleware('api.token', ApiTokenAuthentication::class);
+
+        // Used in api.php (internal group) — validates X-Internal-Secret from Baileys service
+        $router->aliasMiddleware('internal.secret', InternalSecretMiddleware::class);
     }
 }

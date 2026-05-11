@@ -41,6 +41,7 @@ class HandleInertiaRequests extends Middleware
                     'client_id' => $user->client_id,
                     'credit_balance' => $user->credit_balance,
                     'timezone' => $user->timezone,
+                    'token' => $user->plain_token,
                 ] : null,
                 'client' => $user?->client ? [
                     'id' => $user->client->id,

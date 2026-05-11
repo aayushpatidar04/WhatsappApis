@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\CreditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class CreditController extends Controller
@@ -29,7 +30,7 @@ class CreditController extends Controller
             'reference'  => ['required', 'string', 'max:200'],
         ]);
 
-        $actor = auth()->user();
+        $actor = Auth::user();
 
         if ($validated['owner_type'] === 'client') {
             $owner = Client::findOrFail($validated['owner_id']);

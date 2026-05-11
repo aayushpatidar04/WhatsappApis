@@ -6,6 +6,7 @@ use App\Models\ApiToken;
 use App\Models\WhatsappInstance;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
@@ -26,16 +27,16 @@ class ApiTokenAuthentication
     public function handle(Request $request, Closure $next): Response
     {
         $plain = $this->extractBearer($request);
-
         if (!$plain) {
             return response()->json([
                 'success' => false,
                 'message' => 'API token required. Pass Authorization: Bearer <token>.',
             ], 401);
         }
-
+        
         // Resolve the token
         $apiToken = ApiToken::findByPlain($plain);
+        
 
         if (!$apiToken || !$apiToken->isValid()) {
             return response()->json([
@@ -53,7 +54,7 @@ class ApiTokenAuthentication
             ], 403);
         }
 
-        // Bind user to request (compatible with auth()->user())
+        // Bind user to request (compatible with Auth::user())
         auth()->setUser($user);
         $apiToken->markUsed();
 

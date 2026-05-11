@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Services\CreditService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -21,7 +22,7 @@ class UserController extends Controller
      */
     public function index(Request $request): Response
     {
-        $users = User::where('client_id', auth()->user()->client_id)
+        $users = User::where('client_id', Auth::user()->client_id)
             ->where('role', 'user')
             ->withCount('instances')
             ->orderByDesc('created_at')
@@ -38,7 +39,7 @@ class UserController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
-        $admin = auth()->user();
+        $admin = Auth::user();
 
         $validated = $request->validate([
             'name'     => ['required', 'string', 'max:255'],
@@ -109,7 +110,7 @@ class UserController extends Controller
      */
     public function allocateCredits(Request $request, int $id): JsonResponse
     {
-        $admin     = auth()->user();
+        $admin     = Auth::user();
         $user      = $this->findInTenant($id);
         $validated = $request->validate([
             'credits'   => ['required', 'integer', 'min:1'],
@@ -156,7 +157,7 @@ class UserController extends Controller
     private function findInTenant(int $id): User
     {
         return User::where('id', $id)
-            ->where('client_id', auth()->user()->client_id)
+            ->where('client_id', Auth::user()->client_id)
             ->where('role', 'user')
             ->firstOrFail();
     }

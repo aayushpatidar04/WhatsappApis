@@ -7,21 +7,19 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 /**
- * Protects internal webhook routes called by the Baileys Node.js service.
- * Uses a shared secret header (not a user token).
+ * Protects /api/internal/* endpoints.
+ * Only the Baileys Node.js service (same server, localhost) can call these.
+ * Validated by X-Internal-Secret header matching BAILEYS_INTERNAL_SECRET env var.
  */
 class InternalSecretMiddleware
 {
     public function handle(Request $request, Closure $next): Response
     {
-        $provided = $request->header('X-Internal-Secret');
-        $expected = config('services.baileys.secret');
+        $expected = config('services.baileys.secret', '');
+        $provided = $request->header('X-Internal-Secret', '');
 
-        if (!$provided || !hash_equals($expected, $provided)) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Unauthorized internal request.',
-            ], 401);
+        if (empty($expected) || !hash_equals($expected, $provided)) {
+            abort(401, 'Invalid internal secret.');
         }
 
         return $next($request);

@@ -23,6 +23,7 @@ class User extends Authenticatable
         'phone',
         'timezone',
         'is_active',
+        'plain_token',
     ];
 
     protected $hidden = [
