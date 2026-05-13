@@ -45,7 +45,7 @@
                                     <div
                                         class="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center flex-shrink-0">
                                         <span class="text-purple-700 text-xs font-bold">{{ client.name.charAt(0)
-                                            }}</span>
+                                        }}</span>
                                     </div>
                                     <div>
                                         <p class="font-medium text-gray-900">{{ client.name }}</p>
@@ -221,9 +221,14 @@ const createClient = async () => {
 
 const toggleActive = async (client) => {
     if (!confirm(`${client.is_active ? 'Suspend' : 'Reactivate'} "${client.name}"?`)) return
-    await axios.patch(route('super.clients.update', client.id), { is_active: !client.is_active })
+    if (client.is_active) {
+        await axios.delete(route('super.clients.destroy', client.id))
+    } else {
+        await axios.patch(route('super.clients.update', client.id), { is_active: true })
+    }
     router.reload({ only: ['clients'] })
 }
+
 
 const openCredit = (client) => {
     creditClient.value = client

@@ -5,9 +5,12 @@ use App\Http\Controllers\Admin\CreditController as AdminCreditController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Client\UserController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Web\CampaignController;
+use App\Http\Controllers\Web\ContactController;
 use App\Http\Controllers\Web\CreditController;
 use App\Http\Controllers\Web\InstanceController;
 use App\Http\Controllers\Web\MessageController;
+use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\TokenController;
 use App\Http\Controllers\Web\WebhookController;
 use Illuminate\Support\Facades\Auth;
@@ -77,9 +80,9 @@ Route::middleware(['auth', 'active'])
         Route::get('/tokens', [DashboardController::class, 'userTokens'])->name('tokens');
         Route::get('/send', [MessageController::class, 'sendPage'])->name('send');
         Route::get('/inbox', [MessageController::class, 'inboxPage'])->name('inbox');
-        Route::get('/campaigns', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'campaigns']))->name('campaigns');
-        Route::get('/contacts', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'contacts']))->name('contacts');
-        Route::get('/reports', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'reports']))->name('reports');
+        Route::get('/contacts', [ContactController::class, 'page'])->name('contacts');
+        Route::get('/campaigns', [CampaignController::class, 'page'])->name('campaigns');
+        Route::get('/reports', [ReportController::class, 'page'])->name('reports');
         Route::get('/webhooks', [WebhookController::class, 'page'])->name('webhooks');
         Route::get('/settings', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'settings']))->name('settings');
 
@@ -99,6 +102,44 @@ Route::middleware(['auth', 'active'])
             Route::delete('/{id}', [WebhookController::class, 'destroy'])->name('destroy');
             Route::post('/{id}/ping', [WebhookController::class, 'ping'])->name('ping');
             Route::get('/{id}/logs', [WebhookController::class, 'logs'])->name('logs');
+        });
+
+        // ── Contact JSON actions ──────────────────────────────────────────────────────
+        Route::prefix('contacts')->name('contacts.')->group(function () {
+            Route::get('/api', [ContactController::class, 'index'])->name('index');
+            Route::post('/', [ContactController::class, 'store'])->name('store');
+            Route::patch('/{id}', [ContactController::class, 'update'])->name('update');
+            Route::delete('/{id}', [ContactController::class, 'destroy'])->name('destroy');
+            Route::post('/import', [ContactController::class, 'import'])->name('import');
+            Route::get('/tags', [ContactController::class, 'tags'])->name('tags');
+            Route::get('/groups', [ContactController::class, 'groups'])->name('groups');
+            Route::post('/groups', [ContactController::class, 'storeGroup'])->name('groups.store');
+            Route::post('/groups/{id}/add', [ContactController::class, 'addToGroup'])->name('groups.add');
+        });
+
+        // ── Campaign JSON actions ─────────────────────────────────────────────────────
+        Route::prefix('campaigns')->name('campaigns.')->group(function () {
+            Route::get('/api', [CampaignController::class, 'index'])->name('index');
+            Route::post('/', [CampaignController::class, 'store'])->name('store');
+            Route::get('/{id}', [CampaignController::class, 'show'])->name('show');
+            Route::patch('/{id}', [CampaignController::class, 'update'])->name('update');
+            Route::post('/{id}/launch', [CampaignController::class, 'launch'])->name('launch');
+            Route::post('/{id}/pause', [CampaignController::class, 'pause'])->name('pause');
+            Route::post('/{id}/resume', [CampaignController::class, 'resume'])->name('resume');
+            Route::post('/{id}/cancel', [CampaignController::class, 'cancel'])->name('cancel');
+            Route::get('/{id}/recipients', [CampaignController::class, 'recipients'])->name('recipients');
+            Route::get('/{id}/analytics', [CampaignController::class, 'analytics'])->name('analytics');
+        });
+
+        // ── Report JSON actions ───────────────────────────────────────────────────────
+        Route::prefix('reports')->name('reports.')->group(function () {
+            Route::get('/overview', [ReportController::class, 'overview'])->name('overview');
+            Route::get('/daily-volume', [ReportController::class, 'dailyVolume'])->name('daily-volume');
+            Route::get('/by-instance', [ReportController::class, 'byInstance'])->name('by-instance');
+            Route::get('/type-breakdown', [ReportController::class, 'typeBreakdown'])->name('type-breakdown');
+            Route::get('/hourly-heatmap', [ReportController::class, 'hourlyHeatmap'])->name('hourly-heatmap');
+            Route::get('/campaign-funnel', [ReportController::class, 'campaignFunnel'])->name('campaign-funnel');
+            Route::get('/export', [ReportController::class, 'export'])->name('export');
         });
         // ── Instance JSON actions (Vue axios calls — session auth) ─────────────
         // Prefix: /dashboard/instances/*

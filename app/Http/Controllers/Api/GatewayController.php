@@ -3,8 +3,10 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Message;
 use App\Models\WhatsappInstance;
 use App\Services\BaileysClient;
+use App\Services\MessageService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -22,7 +24,9 @@ use Illuminate\Support\Facades\Auth;
  */
 class GatewayController extends Controller
 {
-    public function __construct(private readonly BaileysClient $baileys) {}
+    public function __construct(private readonly BaileysClient $baileys, private readonly MessageService $messageService)
+    {
+    }
 
     /**
      * GET /api/gateway/me
@@ -34,13 +38,13 @@ class GatewayController extends Controller
 
         return response()->json([
             'success' => true,
-            'data'    => [
-                'id'             => $user->id,
-                'name'           => $user->name,
-                'email'          => $user->email,
-                'role'           => $user->role,
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
                 'credit_balance' => $user->credit_balance,
-                'client_id'      => $user->client_id,
+                'client_id' => $user->client_id,
             ],
         ]);
     }
@@ -59,12 +63,12 @@ class GatewayController extends Controller
             ->when($user->isUser(), fn($q) => $q->where('owner_id', $user->id)->where('owner_type', 'user'))
             ->get(['id', 'name', 'phone_number', 'instance_token', 'status', 'expires_at'])
             ->map(fn($i) => [
-                'id'             => $i->id,
-                'name'           => $i->name,
-                'phone_number'   => $i->phone_number,
+                'id' => $i->id,
+                'name' => $i->name,
+                'phone_number' => $i->phone_number,
                 'instance_token' => $i->instance_token,
-                'status'         => $i->status,
-                'expires_at'     => $i->expires_at?->toIso8601String(),
+                'status' => $i->status,
+                'expires_at' => $i->expires_at?->toIso8601String(),
             ]);
 
         return response()->json(['success' => true, 'data' => $instances]);
@@ -77,17 +81,16 @@ class GatewayController extends Controller
     public function instanceStatus(int $id): JsonResponse
     {
         $instance = $this->resolveInstance($id);
-        $live     = $this->baileys->getStatus($instance->instance_token);
-
         return response()->json([
-            'success'      => true,
-            'data'         => [
-                'id'           => $instance->id,
-                'name'         => $instance->name,
+            'success' => true,
+            'data' => [
+                'id' => $instance->id,
+                'name' => $instance->name,
                 'phone_number' => $instance->phone_number,
-                'db_status'    => $instance->status,
-                'live_status'  => $live['status'] ?? 'unknown',
-            ],
+                'status' => $instance->status,
+                'expires_at' => $instance->expires_at?->toIso8601String(),
+                'days_left' => $instance->daysUntilExpiry(),
+            ]
         ]);
     }
 
@@ -105,13 +108,13 @@ class GatewayController extends Controller
     public function sendText(Request $request): JsonResponse
     {
         $request->validate([
-            'to'      => ['required', 'string'],
+            'to' => ['required', 'string'],
             'message' => ['required', 'string', 'max:4096'],
         ]);
 
         return $this->sendViaInstance($request, [
-            'type'    => 'text',
-            'to'      => $request->to,
+            'type' => 'text',
+            'to' => $request->to,
             'message' => $request->message,
         ]);
     }
@@ -119,47 +122,47 @@ class GatewayController extends Controller
     public function sendImage(Request $request): JsonResponse
     {
         $request->validate([
-            'to'        => ['required', 'string'],
+            'to' => ['required', 'string'],
             'media_url' => ['required', 'url'],
-            'caption'   => ['sometimes', 'string', 'max:1024'],
+            'caption' => ['sometimes', 'string', 'max:1024'],
         ]);
 
         return $this->sendViaInstance($request, [
-            'type'      => 'image',
-            'to'        => $request->to,
+            'type' => 'image',
+            'to' => $request->to,
             'media_url' => $request->media_url,
-            'caption'   => $request->caption,
+            'caption' => $request->caption,
         ]);
     }
 
     public function sendVideo(Request $request): JsonResponse
     {
         $request->validate([
-            'to'        => ['required', 'string'],
+            'to' => ['required', 'string'],
             'media_url' => ['required', 'url'],
-            'caption'   => ['sometimes', 'string', 'max:1024'],
+            'caption' => ['sometimes', 'string', 'max:1024'],
         ]);
 
         return $this->sendViaInstance($request, [
-            'type'      => 'video',
-            'to'        => $request->to,
+            'type' => 'video',
+            'to' => $request->to,
             'media_url' => $request->media_url,
-            'caption'   => $request->caption,
+            'caption' => $request->caption,
         ]);
     }
 
     public function sendAudio(Request $request): JsonResponse
     {
         $request->validate([
-            'to'         => ['required', 'string'],
-            'media_url'  => ['required', 'url'],
+            'to' => ['required', 'string'],
+            'media_url' => ['required', 'url'],
             'voice_note' => ['sometimes', 'boolean'],
         ]);
 
         return $this->sendViaInstance($request, [
-            'type'       => 'audio',
-            'to'         => $request->to,
-            'media_url'  => $request->media_url,
+            'type' => 'audio',
+            'to' => $request->to,
+            'media_url' => $request->media_url,
             'voice_note' => $request->boolean('voice_note', false),
         ]);
     }
@@ -167,56 +170,56 @@ class GatewayController extends Controller
     public function sendDocument(Request $request): JsonResponse
     {
         $request->validate([
-            'to'        => ['required', 'string'],
+            'to' => ['required', 'string'],
             'media_url' => ['required', 'url'],
-            'filename'  => ['sometimes', 'string'],
-            'mimetype'  => ['sometimes', 'string'],
+            'filename' => ['sometimes', 'string'],
+            'mimetype' => ['sometimes', 'string'],
         ]);
 
         return $this->sendViaInstance($request, [
-            'type'      => 'document',
-            'to'        => $request->to,
+            'type' => 'document',
+            'to' => $request->to,
             'media_url' => $request->media_url,
-            'filename'  => $request->filename,
-            'mimetype'  => $request->mimetype,
+            'filename' => $request->filename,
+            'mimetype' => $request->mimetype,
         ]);
     }
 
     public function sendLocation(Request $request): JsonResponse
     {
         $request->validate([
-            'to'        => ['required', 'string'],
-            'latitude'  => ['required', 'numeric', 'between:-90,90'],
+            'to' => ['required', 'string'],
+            'latitude' => ['required', 'numeric', 'between:-90,90'],
             'longitude' => ['required', 'numeric', 'between:-180,180'],
-            'name'      => ['sometimes', 'string'],
-            'address'   => ['sometimes', 'string'],
+            'name' => ['sometimes', 'string'],
+            'address' => ['sometimes', 'string'],
         ]);
 
         return $this->sendViaInstance($request, [
-            'type'      => 'location',
-            'to'        => $request->to,
-            'latitude'  => $request->latitude,
+            'type' => 'location',
+            'to' => $request->to,
+            'latitude' => $request->latitude,
             'longitude' => $request->longitude,
-            'name'      => $request->name,
-            'address'   => $request->address,
+            'name' => $request->name,
+            'address' => $request->address,
         ]);
     }
 
     public function sendPoll(Request $request): JsonResponse
     {
         $request->validate([
-            'to'               => ['required', 'string'],
-            'question'         => ['required', 'string', 'max:255'],
-            'options'          => ['required', 'array', 'min:2', 'max:12'],
-            'options.*'        => ['required', 'string'],
+            'to' => ['required', 'string'],
+            'question' => ['required', 'string', 'max:255'],
+            'options' => ['required', 'array', 'min:2', 'max:12'],
+            'options.*' => ['required', 'string'],
             'selectable_count' => ['sometimes', 'integer', 'min:1'],
         ]);
 
         return $this->sendViaInstance($request, [
-            'type'             => 'poll',
-            'to'               => $request->to,
-            'question'         => $request->question,
-            'options'          => $request->options,
+            'type' => 'poll',
+            'to' => $request->to,
+            'question' => $request->question,
+            'options' => $request->options,
             'selectable_count' => $request->integer('selectable_count', 1),
         ]);
     }
@@ -224,28 +227,28 @@ class GatewayController extends Controller
     public function sendBulk(Request $request): JsonResponse
     {
         $request->validate([
-            'recipients'   => ['required', 'array', 'min:1', 'max:1000'],
+            'recipients' => ['required', 'array', 'min:1', 'max:1000'],
             'recipients.*' => ['required', 'string'],
-            'type'         => ['required', 'string'],
-            'message'      => ['required_if:type,text', 'string'],
-            'media_url'    => ['required_unless:type,text,location,poll', 'url'],
+            'type' => ['required', 'string'],
+            'message' => ['required_if:type,text', 'string'],
+            'media_url' => ['required_unless:type,text,location,poll', 'url'],
         ]);
 
         // Phase 4 will implement proper campaign queue
         // For now, limit bulk to 50 and send synchronously
-        $instance   = $request->_instance;
+        $instance = $request->_instance;
         $recipients = array_slice($request->recipients, 0, 50);
-        $results    = [];
+        $results = [];
 
         foreach ($recipients as $to) {
             $payload = array_merge($request->except('recipients'), ['to' => $to]);
-            $result  = $this->baileys->send($instance->instance_token, $payload);
+            $result = $this->baileys->send($instance->instance_token, $payload);
             $results[] = ['to' => $to, 'success' => $result['success'], 'wa_message_id' => $result['wa_message_id'] ?? null];
         }
 
         return response()->json([
             'success' => true,
-            'data'    => ['results' => $results, 'total' => count($results)],
+            'data' => ['results' => $results, 'total' => count($results)],
         ]);
     }
 
@@ -253,13 +256,19 @@ class GatewayController extends Controller
      * GET /api/gateway/messages
      * Message log for the authenticated user's instances. Phase 3 will expand this.
      */
-    public function messages(): JsonResponse
+    public function messages(Request $request): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'message' => 'Full message log available in Phase 3.',
-            'data'    => [],
-        ]);
+        $user = Auth::user();
+        $messages = Message::with('instance:id,name')
+            ->when($user->isClientAdmin(), fn($q) => $q->where('client_id', $user->client_id))
+            ->when($user->isUser(), fn($q) => $q->where('user_id', $user->id))
+            ->when($request->filled('direction'), fn($q) => $q->where('direction', $request->direction))
+            ->when($request->filled('status'), fn($q) => $q->where('status', $request->status))
+            ->orderByDesc('created_at')
+            ->paginate($request->integer('per_page', 25))
+            ->through(fn($m) => $this->messageService->formatMessage($m));
+
+        return response()->json(['success' => true, 'data' => $messages]);
     }
 
     // ─── Helpers ─────────────────────────────────────────────────────────────
@@ -296,20 +305,23 @@ class GatewayController extends Controller
         }
 
         return response()->json([
-            'success'       => true,
+            'success' => true,
             'wa_message_id' => $result['wa_message_id'],
-            'timestamp'     => $result['timestamp'] ?? null,
+            'timestamp' => $result['timestamp'] ?? null,
         ]);
     }
 
     private function resolveInstance(int $id): WhatsappInstance
     {
-        $user     = Auth::user();
+        $user = Auth::user();
         $instance = WhatsappInstance::whereNull('deleted_at')->findOrFail($id);
 
-        if ($user->isSuperAdmin())                                                  return $instance;
-        if ($user->isClientAdmin() && $instance->client_id === $user->client_id)   return $instance;
-        if ($instance->owner_type === 'user' && $instance->owner_id === $user->id) return $instance;
+        if ($user->isSuperAdmin())
+            return $instance;
+        if ($user->isClientAdmin() && $instance->client_id === $user->client_id)
+            return $instance;
+        if ($instance->owner_type === 'user' && $instance->owner_id === $user->id)
+            return $instance;
 
         abort(403);
     }

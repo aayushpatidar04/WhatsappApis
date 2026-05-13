@@ -14,9 +14,39 @@
             <StatCard :icon="DevicePhoneMobileIcon" label="Total Instances" :value="stats.total_instances"
                 color="blue" />
             <StatCard :icon="CheckCircleIcon" label="Active" :value="stats.active_instances" color="green" />
-            <StatCard :icon="PaperAirplaneIcon" label="Messages Today" :value="stats.messages_today" color="purple" />
-            <StatCard :icon="CreditCardIcon" label="Credits" :value="$page.props.auth.user.credit_balance"
-                sub="instance credits" color="orange" />
+            <StatCard :icon="PaperAirplaneIcon" label="Sent Today" :value="stats.messages_today" color="purple" />
+            <StatCard :icon="InboxIcon" label="Received Today" :value="stats.messages_received" color="teal" />
+        </div>
+
+        <!-- Secondary stats -->
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+            <div class="card flex items-center gap-4">
+                <div class="p-3 bg-green-100 rounded-xl">
+                    <ChartBarIcon class="w-5 h-5 text-green-600" />
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.delivery_rate }}%</p>
+                    <p class="text-xs text-gray-400">Delivery rate</p>
+                </div>
+            </div>
+            <div class="card flex items-center gap-4">
+                <div class="p-3 bg-red-100 rounded-xl">
+                    <XCircleIcon class="w-5 h-5 text-red-500" />
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">{{ stats.failed_today }}</p>
+                    <p class="text-xs text-gray-400">Failed today</p>
+                </div>
+            </div>
+            <div class="card flex items-center gap-4">
+                <div class="p-3 bg-orange-100 rounded-xl">
+                    <CreditCardIcon class="w-5 h-5 text-orange-500" />
+                </div>
+                <div>
+                    <p class="text-2xl font-bold text-gray-900">{{ $page.props.auth.user.credit_balance }}</p>
+                    <p class="text-xs text-gray-400">Credits available</p>
+                </div>
+            </div>
         </div>
 
         <!-- Two-column layout -->
@@ -66,22 +96,45 @@
             <!-- Right column -->
             <div class="space-y-6">
                 <!-- Quick send -->
+                <!-- Quick send -->
                 <div class="card">
-                    <h2 class="card-title mb-4">Quick Send</h2>
-                    <p class="text-sm text-gray-400 mb-4">
-                        Use your instance token to send a message via API.
-                    </p>
-                    <div class="bg-gray-900 rounded-xl p-4 text-xs font-mono text-green-400 overflow-x-auto">
-                        <p class="text-gray-500 mb-1"># Send a text message</p>
-                        <p>curl -X POST \</p>
-                        <p class="pl-2">{{ appUrl }}/api/send/text \</p>
-                        <p class="pl-2">-H "Authorization: Bearer &lt;token&gt;" \</p>
-                        <p class="pl-2">-H "X-Instance-Token: &lt;instance_token&gt;" \</p>
-                        <p class="pl-2">-d '{"to":"91XXXXXXXXXX","message":"Hello!"}'</p>
+                    <h2 class="card-title mb-3">Quick Actions</h2>
+                    <div class="space-y-2">
+                        <Link :href="route('user.send')"
+                            class="flex items-center gap-3 p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors">
+                            <PaperAirplaneIcon class="w-5 h-5 text-blue-600 flex-shrink-0" />
+                            <span class="text-sm font-medium text-blue-700">Send Message</span>
+                        </Link>
+                        <Link :href="route('user.inbox')"
+                            class="flex items-center gap-3 p-3 bg-green-50 hover:bg-green-100 rounded-xl transition-colors">
+                            <InboxIcon class="w-5 h-5 text-green-600 flex-shrink-0" />
+                            <span class="text-sm font-medium text-green-700">View Inbox</span>
+                        </Link>
+                        <Link :href="route('user.tokens')"
+                            class="flex items-center gap-3 p-3 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors">
+                            <KeyIcon class="w-5 h-5 text-purple-600 flex-shrink-0" />
+                            <span class="text-sm font-medium text-purple-700">API Tokens</span>
+                        </Link>
+                        <Link :href="route('user.webhooks')"
+                            class="flex items-center gap-3 p-3 bg-orange-50 hover:bg-orange-100 rounded-xl transition-colors">
+                            <GlobeAltIcon class="w-5 h-5 text-orange-600 flex-shrink-0" />
+                            <span class="text-sm font-medium text-orange-700">Webhooks</span>
+                        </Link>
                     </div>
-                    <Link :href="route('user.tokens')" class="btn-secondary btn-sm w-full justify-center mt-3">
-                        Get API Token
-                    </Link>
+                </div>
+
+                <!-- API quick-start -->
+                <div class="card">
+                    <h2 class="card-title mb-3">External API</h2>
+                    <div class="bg-gray-900 rounded-xl p-3 text-xs font-mono text-green-400 overflow-x-auto">
+                        <p class="text-gray-500 mb-1"># Send from your app:</p>
+                        <p>curl -X POST \</p>
+                        <p class="pl-2 text-yellow-300">{{ appUrl }}/api/gateway/send/text \</p>
+                        <p class="pl-2">-H "Authorization: Bearer <span class="text-yellow-400">&lt;token&gt;</span>" \
+                        </p>
+                        <p class="pl-2">-H "X-Instance-Token: <span class="text-blue-400">&lt;token&gt;</span>" \</p>
+                        <p class="pl-2">-d '{"to":"91XXX","message":"Hi!"}'</p>
+                    </div>
                 </div>
 
                 <!-- Credit info -->
@@ -108,12 +161,20 @@ import { Link, usePage } from '@inertiajs/vue3'
 import AppLayout from '@/Components/Layout/AppLayout.vue'
 import StatCard from '@/Components/UI/StatCard.vue'
 import {
-    DevicePhoneMobileIcon, CheckCircleIcon,
-    PaperAirplaneIcon, CreditCardIcon,
+    DevicePhoneMobileIcon, CheckCircleIcon, PaperAirplaneIcon,
+    InboxIcon, ChartBarIcon, XCircleIcon, CreditCardIcon,
+    KeyIcon, GlobeAltIcon,
 } from '@heroicons/vue/24/outline'
 
 const props = defineProps({
-    stats: { type: Object, default: () => ({ total_instances: 0, active_instances: 0, messages_today: 0 }) },
+    stats: {
+        type: Object,
+        default: () => ({
+            total_instances: 0, active_instances: 0,
+            messages_today: 0, messages_received: 0,
+            delivery_rate: 0, failed_today: 0,
+        }),
+    },
     instances: { type: Array, default: () => [] },
 })
 

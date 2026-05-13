@@ -31,6 +31,11 @@ app(Schedule::class)->command('instances:expiry-check')
     ->dailyAt('09:00')
     ->withoutOverlapping();
 
+// Clean up old message records (keep 90 days)
+app(Schedule::class)->command('messages:cleanup --days=90')
+    ->dailyAt('02:00')
+    ->withoutOverlapping();
+
 // Queue cleanup
 app(Schedule::class)->command('queue:prune-failed --hours=720')
     ->daily();

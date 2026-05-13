@@ -29,7 +29,7 @@
             <div v-for="n in 3" :key="n" class="card animate-pulse h-48 bg-gray-50" />
         </div>
 
-        <div v-else-if="!instances.length" class="card text-center py-16">
+        <div v-else-if="!instanceList.length" class="card text-center py-16">
             <DevicePhoneMobileIcon class="w-16 h-16 text-gray-200 mx-auto mb-4" />
             <h3 class="text-lg font-semibold text-gray-700">No instances yet</h3>
             <p class="text-gray-400 text-sm mt-2 max-w-sm mx-auto">
@@ -42,7 +42,7 @@
 
         <!-- Instance grid -->
         <div v-else class="grid sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            <InstanceCardLive v-for="inst in instances" :key="inst.id" :instance="inst" @connect="openQr(inst)"
+            <InstanceCardLive v-for="inst in instanceList" :key="inst.id" :instance="inst" @connect="openQr(inst)"
                 @disconnect="handleDisconnect(inst)" @delete="handleDelete(inst)" @details="handleDetails(inst)" />
         </div>
 
@@ -77,7 +77,7 @@ const props = defineProps({
     instances: { type: Object, default: () => ({ data: [] }) },
 })
 
-const { instances, loading, error, fetchInstances, addInstance, removeInstance, refreshInstance } = useInstances()
+const { instances: instanceList, loading, error, fetchInstances, addInstance, removeInstance, refreshInstance } = useInstances()
 
 const page = usePage()
 const showCreate = ref(false)
@@ -90,7 +90,19 @@ onMounted(() => fetchInstances())
 const openQr = (inst) => { connectingInstance.value = inst }
 const handleDetails = (inst) => { detailsInstance.value = inst }
 
-const onConnected = () => { connectingInstance.value = null }
+const onConnected = (payload) => {
+    const inst = instanceList.value.find(i => i.id === connectingInstanceId.value)
+
+    if (inst) {
+        inst.status = 'active'
+        inst.phone_number = payload?.phone_number ?? inst.phone_number
+
+        if (!inst.activated_at) {
+            inst.activated_at = new Date().toISOString()
+        }
+    }
+    connectingInstanceId.value = null
+}
 const onInstanceCreated = (newInst) => { showCreate.value = false; addInstance(newInst) }
 const onCreditsAdded = (updated) => { detailsInstance.value = null; if (updated) refreshInstance(updated) }
 
@@ -103,12 +115,14 @@ const handleDisconnect = async (inst) => {
             alert(res.data.message ?? 'Failed to disconnect.')
             return
         }
-
-        // ✅ update local state
-        inst.status = 'pending'
-        inst.phone_number =
-
-            router.reload({ only: ['instances'] })
+        const index = instanceList.value.findIndex(i => i.id === inst.id)
+        if (index !== -1) {
+            instanceList.value[index] = {
+                ...instanceList.value[index],
+                status: 'pending', // or 'disconnected' depending on your backend logic
+                phone_number: null
+            }
+        }
     } catch (err) {
         alert(err.response?.data?.message ?? 'Failed to disconnect.')
     }
@@ -120,8 +134,8 @@ const handleDelete = async (inst) => {
     try {
         await instanceApi.delete(inst.id)  // DELETE /dashboard/instances/{id}
         // ✅ remove from array
-        instances.value = instances.value.filter(i => i.id !== inst.id)
-        router.reload({ only: ['instances'] })
+        instanceList.value = instanceList.value.filter(i => i.id !== inst.id)
+        // router.reload({ only: ['instances'] })
     } catch (err) {
         alert(err.response?.data?.message ?? 'Failed to delete.')
     }

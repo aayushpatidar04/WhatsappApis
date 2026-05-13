@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Client;
+use App\Models\Message;
 use App\Models\User;
 use App\Models\WhatsappInstance;
 use App\Services\BaileysClient;
@@ -38,10 +39,15 @@ class DashboardController extends Controller
                 'activated_at'
             ]);
 
+        $msgBase = Message::where('user_id', $user->id);
+
         $stats = [
             'total_instances' => WhatsappInstance::ownedBy($user->id, 'user')->whereNull('deleted_at')->count(),
             'active_instances' => WhatsappInstance::ownedBy($user->id, 'user')->where('status', 'active')->count(),
-            'messages_today' => 0, // Phase 3
+            'messages_today' => (clone $msgBase)->whereDate('created_at', today())->outbound()->count(),
+            'messages_received' => (clone $msgBase)->whereDate('created_at', today())->inbound()->count(),
+            'delivery_rate' => $this->deliveryRate($msgBase),
+            'failed_today' => (clone $msgBase)->whereDate('created_at', today())->where('status', 'failed')->count(),
         ];
 
         return Inertia::render('User/Dashboard', compact('stats', 'instances'));
@@ -74,6 +80,7 @@ class DashboardController extends Controller
             'credits_consumed' => (float) $i->credits_consumed,
             'reconnect_attempts' => $i->reconnect_attempts,
             'last_connected_at' => $i->last_connected_at?->toIso8601String(),
+            'is_own' => true,
         ]);
 
         return Inertia::render('User/Instances', compact('instances'));
@@ -100,6 +107,8 @@ class DashboardController extends Controller
         $allInstances = WhatsappInstance::where('client_id', $client->id)
             ->whereNull('deleted_at');
 
+        $msgBase = Message::where('client_id', $client->id);
+
         $ownInstances = WhatsappInstance::ownedBy($client->id, 'client')
             ->whereNull('deleted_at');
 
@@ -109,7 +118,10 @@ class DashboardController extends Controller
             'active_instances' => (clone $allInstances)->where('status', 'active')->count(),
             'pending_instances' => (clone $allInstances)->whereIn('status', ['pending', 'disconnected'])->count(),
             'suspended_instances' => (clone $allInstances)->whereIn('status', ['suspended', 'expired'])->count(),
-            'own_instances' => (clone $ownInstances)->count(),
+            'own_instances' => WhatsappInstance::ownedBy($client->id, 'client')->whereNull('deleted_at')->count(),
+            'messages_today' => (clone $msgBase)->whereDate('created_at', today())->outbound()->count(),
+            'messages_received' => (clone $msgBase)->whereDate('created_at', today())->inbound()->count(),
+            'delivery_rate' => $this->deliveryRate($msgBase),
         ];
 
         $recentUsers = User::where('client_id', $client->id)
@@ -163,6 +175,7 @@ class DashboardController extends Controller
             'total_clients' => Client::count(),
             'total_users' => User::where('role', 'user')->count(),
             'active_instances' => WhatsappInstance::where('status', 'active')->count(),
+            'messages_today' => Message::whereDate('created_at', today())->outbound()->count(),
             'credits_sold' => 0, // Phase 5
         ];
 
@@ -177,5 +190,15 @@ class DashboardController extends Controller
         ];
 
         return Inertia::render('Admin/Dashboard', compact('stats', 'recentClients', 'health'));
+    }
+
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private function deliveryRate($query): float
+    {
+        $total = (clone $query)->outbound()->whereNotNull('sent_at')->count();
+        $delivered = (clone $query)->outbound()->whereIn('status', ['delivered', 'read'])->count();
+        return $total > 0 ? round(($delivered / $total) * 100, 1) : 0.0;
     }
 }

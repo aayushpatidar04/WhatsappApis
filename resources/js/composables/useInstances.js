@@ -12,8 +12,15 @@
 
 import { ref, computed, onUnmounted } from 'vue'
 import { instanceApi } from '@/composables/useApi'
+import { usePage } from '@inertiajs/vue3'
 
-export function useInstances(contextPrefix = 'user') {
+export function useInstances() {
+
+    const page = usePage()
+    const role = page.props.auth?.user?.role
+
+    // Pick correct API prefix based on role
+    const prefix = role === 'client_admin' ? '/client' : '/dashboard'
     // ── State ─────────────────────────────────────────────────────────────────
     const instances = ref([])
     const loading = ref(false)
@@ -29,13 +36,22 @@ export function useInstances(contextPrefix = 'user') {
         loading.value = true
         error.value = null
         try {
-            const api = contextPrefix === 'client' ? instanceApi.client : instanceApi
-            const { data } = await instanceApi.list(params)
-            instances.value = data.data?.data ?? data.data ?? []
-            // Subscribe each instance to Pusher
-            instances.value.forEach(inst => subscribeInstance(inst))
+            const qs = new URLSearchParams(params).toString()
+            const url = `${prefix}/instances${qs ? '?' + qs : ''}/api`
+            const res = await fetch(url, {
+                headers: {
+                    'Accept': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest',
+                },
+                credentials: 'same-origin',
+            })
+            const json = await res.json()
+            instances.value = json.data?.data ?? json.data ?? []
+            // Subscribe all to Pusher
+            instances.value.forEach(subscribeInstance)
         } catch (err) {
-            error.value = err.response?.data?.message ?? 'Failed to load instances.'
+            error.value = 'Failed to load instances.'
+            console.error(err)
         } finally {
             loading.value = false
         }
@@ -65,10 +81,12 @@ export function useInstances(contextPrefix = 'user') {
     // ── In-place update — NO router.reload() ─────────────────────────────────
 
     function updateInstance(token, event, payload) {
-        const idx = instances.value.findIndex(i => i.instance_token === token)
-        if (idx === -1) return
+        // const idx = instances.value.findIndex(i => i.instance_token === token)
+        // if (idx === -1) return
+        // const inst = { ...instances.value[idx] }  // shallow copy
 
-        const inst = { ...instances.value[idx] }  // shallow copy
+        const inst = instances.value.find(i => i.instance_token === token)
+        if (!inst) return
 
         switch (event) {
             case 'qr.updated':
@@ -124,7 +142,7 @@ export function useInstances(contextPrefix = 'user') {
         }
 
         // Replace the instance in the array reactively
-        instances.value[idx] = inst
+        // instances.value[idx] = inst
     }
 
     // ── Add / Remove instance locally (after create/delete) ──────────────────

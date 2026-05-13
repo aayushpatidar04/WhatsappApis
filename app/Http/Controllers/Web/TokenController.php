@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
 use App\Models\ApiToken;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -57,15 +58,14 @@ class TokenController extends Controller
             'expires_at' => ['sometimes', 'nullable', 'date', 'after:now'],
         ]);
 
-        [$plain, $hash] = ApiToken::generatePair();
+        $expiresAt = isset($validated['expires_at'])
+            ? Carbon::parse($validated['expires_at'])
+            : null;
 
-        $token = ApiToken::create([
-            'user_id' => Auth::id(),
-            'token_hash' => $hash,
-            'name' => $validated['name'],
-            'expires_at' => $validated['expires_at'] ?? null,
-            'is_active' => true,
-        ]);
+        $result = ApiToken::generate(Auth::id(), $validated['name'], $expiresAt);
+
+        $token = $result['token'];
+        $plain = $result['plain'];
 
         return response()->json([
             'success' => true,

@@ -9,7 +9,10 @@ use App\Http\Middleware\RoleMiddleware;
 use App\Services\BaileysClient;
 use App\Services\CreditService;
 use App\Services\InstanceService;
+use App\Services\MessageService;
+use App\Services\RateLimiterService;
 use App\Services\TokenService;
+use App\Services\WebhookService;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\RateLimiter;
@@ -22,8 +25,13 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(BaileysClient::class);
         $this->app->singleton(CreditService::class);
         $this->app->singleton(TokenService::class);
+        $this->app->singleton(RateLimiterService::class);
+        $this->app->singleton(WebhookService::class);
         $this->app->singleton(InstanceService::class, function ($app) {
             return new InstanceService($app->make(CreditService::class));
+        });
+        $this->app->singleton(MessageService::class, function ($app) {
+            return new MessageService($app->make(BaileysClient::class));
         });
     }
 

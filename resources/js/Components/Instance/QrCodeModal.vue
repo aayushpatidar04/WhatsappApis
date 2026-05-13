@@ -121,6 +121,14 @@ let pusherChannel = null
 let qrCountdown = null
 let qrPollInterval = null
 
+// Extracted handler so we can stop listening to it specifically
+const handlePusherEvent = ({ event, payload }) => {
+    if (event === 'qr.updated') { qrCode.value = payload.qr; sessionStatus.value = 'qr_pending'; resetCountdown() }
+    if (event === 'session.connected') { isConnected.value = true; phoneNumber.value = payload.phone_number; sessionStatus.value = 'connected'; stopPolling(); clearCountdown(); emit('connected', { phone_number: phoneNumber.value }) }
+    if (event === 'session.disconnected') { sessionStatus.value = 'disconnected' }
+    if (event === 'session.error') { error.value = payload.error ?? 'Session error.' }
+}
+
 const statusDot = computed(() => ({
     initialising: 'bg-yellow-400 animate-pulse',
     qr_pending: 'bg-blue-500 animate-pulse',
@@ -159,12 +167,8 @@ async function startSession() {
 function subscribePusher() {
     if (!window.Echo || !props.instance) return
     pusherChannel = window.Echo.private(`instance.${props.instance.instance_token}`)
-    pusherChannel.listen('InstanceEvent', ({ event, payload }) => {
-        if (event === 'qr.updated') { qrCode.value = payload.qr; sessionStatus.value = 'qr_pending'; resetCountdown() }
-        if (event === 'session.connected') { isConnected.value = true; phoneNumber.value = payload.phone_number; sessionStatus.value = 'connected'; stopPolling(); clearCountdown(); emit('connected', { phone_number: phoneNumber.value }) }
-        if (event === 'session.disconnected') { sessionStatus.value = 'disconnected' }
-        if (event === 'session.error') { error.value = payload.error ?? 'Session error.' }
-    })
+    // Attach listener using the referenced function
+    pusherChannel.listen('InstanceEvent', handlePusherEvent)
 }
 
 function startPolling() {
@@ -207,13 +211,18 @@ async function refreshQr() {
 
 function cleanup() {
     stopPolling(); clearCountdown()
-    if (window.Echo && props.instance) window.Echo.leave(`instance.${props.instance.instance_token}`)
+    // ✅ FIX: Only stop this specific listener, DO NOT leave the channel
+    if (pusherChannel) {
+        pusherChannel.stopListening('InstanceEvent', handlePusherEvent)
+    }
+    // if (window.Echo && props.instance) window.Echo.leave(`instance.${props.instance.instance_token}`)
     pusherChannel = null
 }
 
 function handleClose() {
     if (!isConnected.value && !confirm('Close? The session will continue in the background.')) return
     cleanup(); emit('close')
+    window.location.reload();
 }
 
 onUnmounted(cleanup)
