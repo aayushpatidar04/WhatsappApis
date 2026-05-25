@@ -6,13 +6,12 @@
                 <h1 class="text-xl font-bold text-gray-900">Campaigns</h1>
                 <p class="text-sm text-gray-400 mt-0.5">Bulk WhatsApp messaging</p>
             </div>
-            <button class="btn-primary" @click="showCreate = true">
+            <button class="btn-primary" @click="openCreate">
                 <PlusIcon class="w-4 h-4" />
                 New Campaign
             </button>
         </div>
 
-        <!-- Filter tabs -->
         <div class="flex gap-2 mb-5 flex-wrap">
             <button v-for="tab in statusTabs" :key="tab.value" @click="filter.status = tab.value; fetch()"
                 :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
@@ -21,20 +20,17 @@
             </button>
         </div>
 
-        <!-- Loading -->
         <div v-if="loading" class="space-y-4">
             <div v-for="n in 4" :key="n" class="card animate-pulse h-28" />
         </div>
 
-        <!-- Empty -->
         <div v-else-if="!campaigns.length" class="card text-center py-14">
             <MegaphoneIcon class="w-12 h-12 text-gray-200 mx-auto mb-3" />
             <h3 class="text-base font-semibold text-gray-700">No campaigns yet</h3>
             <p class="text-gray-400 text-sm mt-1">Create a campaign to send bulk WhatsApp messages to your contacts.</p>
-            <button class="btn-primary btn-sm mt-4" @click="showCreate = true">Create Campaign</button>
+            <button class="btn-primary btn-sm mt-4" @click="openCreate">Create Campaign</button>
         </div>
 
-        <!-- Campaign list -->
         <div v-else class="space-y-4">
             <div v-for="camp in campaigns" :key="camp.id" class="card hover:shadow-md transition-shadow">
                 <div class="flex items-start justify-between gap-4 mb-4">
@@ -47,36 +43,40 @@
                         <p class="text-xs text-gray-400 mt-1">
                             {{ camp.instance?.name }} ·
                             <template v-if="camp.schedule_time">Scheduled: {{ formatDate(camp.schedule_time)
-                                }}</template>
+                            }}</template>
                             <template v-else>{{ formatDate(camp.created_at) }}</template>
                         </p>
                     </div>
-                    <!-- Actions -->
                     <div class="flex gap-1 flex-shrink-0">
                         <button v-if="['draft', 'scheduled'].includes(camp.status)" @click="launch(camp)"
-                            class="btn-primary btn-sm">
+                            class="btn-primary btn-sm" title="Launch">
                             <PlayIcon class="w-3.5 h-3.5" />
-                            Launch
                         </button>
-                        <button v-if="camp.status === 'running'" @click="pause(camp)" class="btn-secondary btn-sm">
+                        <button v-if="camp.status === 'running'" @click="pause(camp)" class="btn-secondary btn-sm"
+                            title="Pause">
                             <PauseIcon class="w-3.5 h-3.5" />
-                            Pause
                         </button>
-                        <button v-if="camp.status === 'paused'" @click="resume(camp)" class="btn-primary btn-sm">
+                        <button v-if="camp.status === 'paused'" @click="resume(camp)" class="btn-primary btn-sm"
+                            title="Resume">
                             <PlayIcon class="w-3.5 h-3.5" />
-                            Resume
                         </button>
-                        <button @click="openDetails(camp)" class="btn-secondary btn-sm">
+
+                        <button v-if="['draft', 'scheduled'].includes(camp.status)" @click="openEdit(camp)"
+                            class="btn-secondary btn-sm" title="Edit">
+                            <PencilIcon class="w-3.5 h-3.5" />
+                        </button>
+
+                        <button @click="openDetails(camp)" class="btn-secondary btn-sm" title="Analytics">
                             <ChartBarIcon class="w-3.5 h-3.5" />
                         </button>
                         <button v-if="!['running', 'completed'].includes(camp.status)" @click="cancel(camp)"
-                            class="btn-sm p-2 text-red-400 hover:bg-red-50 rounded-lg border border-red-100">
+                            class="btn-sm p-2 text-red-400 hover:bg-red-50 rounded-lg border border-red-100"
+                            title="Cancel">
                             <XMarkIcon class="w-4 h-4" />
                         </button>
                     </div>
                 </div>
 
-                <!-- Progress bar -->
                 <div v-if="camp.total_recipients > 0">
                     <div class="flex justify-between text-xs text-gray-400 mb-1.5">
                         <span>{{ camp.sent_count + camp.failed_count }} / {{ camp.total_recipients }} processed</span>
@@ -94,13 +94,13 @@
                     </div>
                     <div class="flex gap-3 mt-1.5 text-xs text-gray-400">
                         <span class="flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full" /><span>{{
-                                camp.delivered_count }} delivered</span></span>
+                            camp.delivered_count }} delivered</span></span>
                         <span class="flex items-center gap-1"><span class="w-2 h-2 bg-blue-400 rounded-full" /><span>{{
                             camp.sent_count
-                                - camp.delivered_count }} sent</span></span>
+                            - camp.delivered_count }} sent</span></span>
                         <span class="flex items-center gap-1"><span class="w-2 h-2 bg-red-400 rounded-full" /><span>{{
-                                camp.failed_count
-                                }} failed</span></span>
+                            camp.failed_count
+                        }} failed</span></span>
                     </div>
                 </div>
                 <div v-else class="text-xs text-gray-400">
@@ -109,7 +109,6 @@
             </div>
         </div>
 
-        <!-- Campaign details drawer -->
         <Teleport to="body">
             <Transition name="slide">
                 <div v-if="detailsCampaign" class="fixed inset-0 z-50 flex justify-end">
@@ -123,7 +122,6 @@
                             </button>
                         </div>
                         <div class="p-6 space-y-6">
-                            <!-- Analytics -->
                             <div v-if="analytics">
                                 <p class="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-3">Performance
                                 </p>
@@ -136,7 +134,6 @@
                                 </div>
                             </div>
 
-                            <!-- Recipients tab -->
                             <div>
                                 <div class="flex items-center justify-between mb-3">
                                     <p class="text-xs text-gray-400 font-semibold uppercase tracking-wide">Recipients
@@ -171,9 +168,8 @@
             </Transition>
         </Teleport>
 
-        <!-- Create Campaign Modal -->
         <CampaignCreateModal :show="showCreate" :instances="activeInstances" :groups="contactGroups"
-            @close="showCreate = false" @created="onCreated" />
+            :edit-campaign="editingCampaign" @close="closeModal" @created="onCreated" @updated="onUpdated" />
 
     </AppLayout>
 </template>
@@ -184,7 +180,7 @@ import AppLayout from '@/Components/Layout/AppLayout.vue'
 import CampaignCreateModal from '@/Components/Campaign/CampaignCreateModal.vue'
 import {
     PlusIcon, MegaphoneIcon, PlayIcon, PauseIcon,
-    ChartBarIcon, XMarkIcon,
+    ChartBarIcon, XMarkIcon, PencilIcon
 } from '@heroicons/vue/24/outline'
 import { campaignApi, contactApi, instanceApi } from '@/composables/useApi'
 
@@ -196,6 +192,7 @@ const recipients = ref([])
 const loading = ref(true)
 const recipientsLoading = ref(false)
 const showCreate = ref(false)
+const editingCampaign = ref(null)
 const detailsCampaign = ref(null)
 const recipientFilter = ref('')
 const filter = reactive({ status: '' })
@@ -250,6 +247,22 @@ function subscribePusher() {
     }
 }
 
+const openCreate = () => {
+    editingCampaign.value = null
+    showCreate.value = true
+}
+
+const openEdit = (camp) => {
+    editingCampaign.value = camp
+    showCreate.value = true
+}
+
+const closeModal = () => {
+    showCreate.value = false
+    // Clear the edit state after the modal close animation finishes
+    setTimeout(() => { editingCampaign.value = null }, 200)
+}
+
 const openDetails = async (camp) => {
     detailsCampaign.value = camp
     analytics.value = null
@@ -282,7 +295,16 @@ const analyticsStats = computed(() => analytics.value ? [
     { label: 'Pending', value: analytics.value.pending, color: 'text-gray-500' },
 ] : [])
 
-const onCreated = (camp) => { showCreate.value = false; campaigns.value.unshift(camp) }
+const onCreated = (camp) => {
+    closeModal()
+    campaigns.value.unshift(camp)
+}
+
+const onUpdated = (camp) => {
+    const idx = campaigns.value.findIndex(c => c.id === camp.id)
+    if (idx !== -1) campaigns.value[idx] = { ...campaigns.value[idx], ...camp }
+    closeModal()
+}
 
 const launch = async (c) => { await campaignApi.launch(c.id); updateStatus(c.id, 'running') }
 const pause = async (c) => { await campaignApi.pause(c.id); updateStatus(c.id, 'paused') }

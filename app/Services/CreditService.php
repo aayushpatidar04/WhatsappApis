@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Client;
 use App\Models\CreditTransaction;
+use App\Models\InstanceCredit;
 use App\Models\User;
 use App\Models\WhatsappInstance;
 use Illuminate\Support\Facades\DB;
@@ -16,12 +17,12 @@ class CreditService
      * Called when Super Admin manually adjusts or when a purchase is recorded.
      */
     public function addToUser(
-        User   $user,
-        int    $credits,
+        User $user,
+        int $credits,
         string $type = CreditTransaction::TYPE_MANUAL_ADJUSTMENT,
         string $reference = '',
-        ?int   $packageId = null,
-        ?int   $actorId = null,
+        ?int $packageId = null,
+        ?int $actorId = null,
     ): CreditTransaction {
         return DB::transaction(function () use ($user, $credits, $type, $reference, $packageId, $actorId) {
             // Lock user row for update to prevent race conditions
@@ -30,16 +31,16 @@ class CreditService
             $user->increment('credit_balance', $credits);
 
             return CreditTransaction::create([
-                'owner_id'     => $user->id,
-                'owner_type'   => 'user',
-                'client_id'    => $user->client_id,
-                'type'         => $type,
-                'credits'      => +$credits,
-                'package_id'   => $packageId,
-                'reference'    => $reference,
-                'balance_after'=> $user->fresh()->credit_balance,
-                'created_by'   => $actorId,
-                'created_at'   => now(),
+                'owner_id' => $user->id,
+                'owner_type' => 'user',
+                'client_id' => $user->client_id,
+                'type' => $type,
+                'credits' => +$credits,
+                'package_id' => $packageId,
+                'reference' => $reference,
+                'balance_after' => $user->fresh()->credit_balance,
+                'created_by' => $actorId,
+                'created_at' => now(),
             ]);
         });
     }
@@ -49,28 +50,38 @@ class CreditService
      */
     public function addToClient(
         Client $client,
-        int    $credits,
+        int $credits,
         string $type = CreditTransaction::TYPE_MANUAL_ADJUSTMENT,
         string $reference = '',
-        ?int   $packageId = null,
-        ?int   $actorId = null,
+        ?int $packageId = null,
+        ?int $actorId = null,
     ): CreditTransaction {
         return DB::transaction(function () use ($client, $credits, $type, $reference, $packageId, $actorId) {
             $client = Client::lockForUpdate()->findOrFail($client->id);
 
             $client->increment('credit_balance', $credits);
 
+            // Also increment the client_admin user's balance
+            $adminUser = $client->users()
+                ->where('role', 'client_admin')
+                ->lockForUpdate()
+                ->first();
+
+            if ($adminUser) {
+                $adminUser->increment('credit_balance', $credits);
+            }
+
             return CreditTransaction::create([
-                'owner_id'     => $client->id,
-                'owner_type'   => 'client',
-                'client_id'    => $client->id,
-                'type'         => $type,
-                'credits'      => +$credits,
-                'package_id'   => $packageId,
-                'reference'    => $reference,
-                'balance_after'=> $client->fresh()->credit_balance,
-                'created_by'   => $actorId,
-                'created_at'   => now(),
+                'owner_id' => $client->id,
+                'owner_type' => 'client',
+                'client_id' => $client->id,
+                'type' => $type,
+                'credits' => +$credits,
+                'package_id' => $packageId,
+                'reference' => $reference,
+                'balance_after' => $client->fresh()->credit_balance,
+                'created_by' => $actorId,
+                'created_at' => now(),
             ]);
         });
     }
@@ -83,8 +94,8 @@ class CreditService
      */
     public function allocateToInstance(
         WhatsappInstance $instance,
-        int              $credits,
-        ?int             $actorId = null,
+        int $credits,
+        ?int $actorId = null,
     ): CreditTransaction {
         return DB::transaction(function () use ($instance, $credits, $actorId) {
             // Determine the wallet owner
@@ -102,35 +113,60 @@ class CreditService
 
             // Increment instance credits and recalculate expiry
             $instance = WhatsappInstance::lockForUpdate()->findOrFail($instance->id);
+
+            // Find active credit row
+            $activeCredit = InstanceCredit::where('instance_id', $instance->id)
+                ->whereIn('status', ['active', 'queued'])
+                ->orderByDesc('expires_at')
+                ->first();
+
+            if ($activeCredit) {
+                // Queue new credit to start after current expiry
+                $startsAt  = $activeCredit->expires_at;
+                $expiresAt = $startsAt->copy()->addDays($credits * 30);
+
+                $status = 'queued';
+            } else {
+                // No active credit → start immediately
+                $startsAt = now();
+                $expiresAt = $startsAt->copy()->addDays($credits * 30);
+
+                $status = 'active';
+            }
+
+            InstanceCredit::create([
+                'instance_id' => $instance->id,
+                'owner_id' => $ownerId,
+                'owner_type' => $ownerType,
+                'client_id' => $clientId,
+                'credit_order_id' => null,
+                'credits' => $credits,
+                'status' => $status,
+                'starts_at' => $startsAt,
+                'expires_at' => $expiresAt,
+                'activated_at' => $status === 'active' ? now() : null,
+                'created_by' => $actorId,
+            ]);
+
             $instance->increment('credits_assigned', $credits);
 
-            // Recalculate expiry: if already activated, extend from NOW; else set from activation
-            if ($instance->activated_at) {
-                $baseDate    = $instance->expires_at && $instance->expires_at->isFuture()
-                    ? $instance->expires_at
-                    : now();
-                $instance->expires_at = $baseDate->addDays($credits * 30);
-            }
-
-            // If was suspended due to credit exhaustion, reactivate
-            if ($instance->status === WhatsappInstance::STATUS_SUSPENDED) {
-                $instance->status = WhatsappInstance::STATUS_PENDING; // will reconnect via Phase 2
-            }
+            $instance->activated_at = $instance->activated_at ?? now();
+            $instance->expires_at = $expiresAt;
 
             $instance->save();
 
             $newBalance = $this->getBalance($ownerId, $ownerType);
 
             return CreditTransaction::create([
-                'owner_id'     => $ownerId,
-                'owner_type'   => $ownerType,
-                'client_id'    => $clientId,
-                'type'         => CreditTransaction::TYPE_ALLOCATION,
-                'credits'      => -$credits,
-                'instance_id'  => $instance->id,
-                'balance_after'=> $newBalance,
-                'created_by'   => $actorId,
-                'created_at'   => now(),
+                'owner_id' => $ownerId,
+                'owner_type' => $ownerType,
+                'client_id' => $clientId,
+                'type' => CreditTransaction::TYPE_ALLOCATION,
+                'credits' => -$credits,
+                'instance_id' => $instance->id,
+                'balance_after' => $newBalance,
+                'created_by' => $actorId,
+                'created_at' => now(),
             ]);
         });
     }
@@ -153,7 +189,7 @@ class CreditService
 
             // Check if consumed >= assigned
             if ($instance->credits_consumed >= $instance->credits_assigned) {
-                $instance->status       = WhatsappInstance::STATUS_SUSPENDED;
+                $instance->status = WhatsappInstance::STATUS_SUSPENDED;
                 $instance->suspended_at = now();
                 $instance->save();
 
@@ -165,15 +201,15 @@ class CreditService
             $newBalance = $this->getBalance($ownerId, $ownerType);
 
             CreditTransaction::create([
-                'owner_id'     => $ownerId,
-                'owner_type'   => $ownerType,
-                'client_id'    => $clientId,
-                'type'         => CreditTransaction::TYPE_CONSUMPTION,
-                'credits'      => 0, // consumption tracked on instance, not wallet
-                'instance_id'  => $instance->id,
-                'reference'    => 'Daily accrual ' . now()->toDateString(),
-                'balance_after'=> $newBalance,
-                'created_at'   => now(),
+                'owner_id' => $ownerId,
+                'owner_type' => $ownerType,
+                'client_id' => $clientId,
+                'type' => CreditTransaction::TYPE_CONSUMPTION,
+                'credits' => 0, // consumption tracked on instance, not wallet
+                'instance_id' => $instance->id,
+                'reference' => 'Daily accrual ' . now()->toDateString(),
+                'balance_after' => $newBalance,
+                'created_at' => now(),
             ]);
         });
     }
@@ -197,16 +233,16 @@ class CreditService
             $newBalance = $this->getBalance($ownerId, $ownerType);
 
             return CreditTransaction::create([
-                'owner_id'     => $ownerId,
-                'owner_type'   => $ownerType,
-                'client_id'    => $clientId,
-                'type'         => CreditTransaction::TYPE_DEALLOCATION,
-                'credits'      => +$remaining,
-                'instance_id'  => $instance->id,
-                'reference'    => 'Instance deleted — credits returned',
-                'balance_after'=> $newBalance,
-                'created_by'   => $actorId,
-                'created_at'   => now(),
+                'owner_id' => $ownerId,
+                'owner_type' => $ownerType,
+                'client_id' => $clientId,
+                'type' => CreditTransaction::TYPE_DEALLOCATION,
+                'credits' => +$remaining,
+                'instance_id' => $instance->id,
+                'reference' => 'Instance deleted — credits returned',
+                'balance_after' => $newBalance,
+                'created_by' => $actorId,
+                'created_at' => now(),
             ]);
         });
     }
@@ -232,6 +268,7 @@ class CreditService
     {
         if ($ownerType === 'client') {
             Client::where('id', $ownerId)->decrement('credit_balance', $amount);
+            User::where('client_id', $ownerId)->where('role', 'client_admin')->decrement('credit_balance', $amount);
         } else {
             User::where('id', $ownerId)->decrement('credit_balance', $amount);
         }
@@ -241,6 +278,7 @@ class CreditService
     {
         if ($ownerType === 'client') {
             Client::where('id', $ownerId)->increment('credit_balance', $amount);
+            User::where('client_id', $ownerId)->where('role', 'client_admin')->increment('credit_balance', $amount);
         } else {
             User::where('id', $ownerId)->increment('credit_balance', $amount);
         }

@@ -6,13 +6,12 @@
                 <h1 class="text-xl font-bold text-gray-900">Webhooks</h1>
                 <p class="text-sm text-gray-400 mt-0.5">Receive WhatsApp events in your application</p>
             </div>
-            <button class="btn-primary" @click="showCreate = true">
+            <button class="btn-primary" @click="openCreateModal">
                 <PlusIcon class="w-4 h-4" />
                 New Webhook
             </button>
         </div>
 
-        <!-- How webhooks work -->
         <div class="card mb-6">
             <h2 class="card-title mb-3">How it works</h2>
             <p class="text-sm text-gray-500 mb-3">
@@ -26,25 +25,22 @@
             </div>
         </div>
 
-        <!-- Loading -->
         <div v-if="loading" class="space-y-3">
             <div v-for="n in 3" :key="n" class="card animate-pulse h-20" />
         </div>
 
-        <!-- Empty -->
         <div v-else-if="!webhooks.length" class="card text-center py-14">
             <GlobeAltIcon class="w-12 h-12 text-gray-200 mx-auto mb-3" />
             <h3 class="text-base font-semibold text-gray-700">No webhooks yet</h3>
             <p class="text-gray-400 text-sm mt-1 max-w-sm mx-auto">
                 Register a URL to receive inbound messages and status updates in real time.
             </p>
-            <button class="btn-primary btn-sm mt-4" @click="showCreate = true">
+            <button class="btn-primary btn-sm mt-4" @click="openCreateModal">
                 <PlusIcon class="w-4 h-4" />
                 Create Webhook
             </button>
         </div>
 
-        <!-- Webhook list -->
         <div v-else class="space-y-4">
             <div v-for="wh in webhooks" :key="wh.id" class="card">
                 <div class="flex items-start justify-between gap-4 mb-4">
@@ -64,7 +60,6 @@
                         </p>
                         <p v-else class="text-xs text-gray-400 mt-0.5">All instances</p>
                     </div>
-                    <!-- Actions -->
                     <div class="flex gap-1 flex-shrink-0">
                         <button @click="pingWebhook(wh)" :disabled="pinging === wh.id" class="btn-secondary btn-sm"
                             title="Test ping">
@@ -72,6 +67,9 @@
                         </button>
                         <button @click="viewLogs(wh)" class="btn-secondary btn-sm" title="Delivery logs">
                             <ClipboardDocumentListIcon class="w-4 h-4" />
+                        </button>
+                        <button @click="openEditModal(wh)" class="btn-secondary btn-sm" title="Edit webhook">
+                            <PencilIcon class="w-4 h-4" />
                         </button>
                         <button @click="toggleActive(wh)" class="btn-secondary btn-sm">
                             <component :is="wh.is_active ? PauseIcon : PlayIcon" class="w-4 h-4" />
@@ -83,7 +81,6 @@
                     </div>
                 </div>
 
-                <!-- Events + secret -->
                 <div class="flex flex-wrap gap-1.5 mb-3">
                     <span v-for="ev in wh.events" :key="ev" class="badge bg-blue-50 text-blue-700 text-xs">
                         {{ ev }}
@@ -114,19 +111,18 @@
             </div>
         </div>
 
-        <!-- Create Webhook Modal -->
         <Teleport to="body">
             <Transition name="modal">
-                <div v-if="showCreate" class="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div class="absolute inset-0 bg-black/50" @click="showCreate = false" />
-                    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg">
-                        <div class="flex items-center justify-between px-6 py-5 border-b">
-                            <h2 class="font-bold text-gray-900">Create Webhook</h2>
-                            <button @click="showCreate = false" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
+                <div v-if="showForm" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div class="absolute inset-0 bg-black/50" @click="showForm = false" />
+                    <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+                        <div class="flex items-center justify-between px-6 py-5 border-b flex-shrink-0">
+                            <h2 class="font-bold text-gray-900">{{ editingId ? 'Edit Webhook' : 'Create Webhook' }}</h2>
+                            <button @click="showForm = false" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
                                 <XMarkIcon class="w-5 h-5" />
                             </button>
                         </div>
-                        <form @submit.prevent="createWebhook" class="px-6 py-5 space-y-4">
+                        <form @submit.prevent="saveWebhook" class="px-6 py-5 space-y-4 overflow-y-auto hide-scrollbar">
                             <div>
                                 <label class="form-label">Name <span class="text-red-500">*</span></label>
                                 <input v-model="form.name" type="text" class="form-input"
@@ -145,11 +141,13 @@
                             <div>
                                 <label class="form-label">Instance <span class="text-gray-400 font-normal">(optional —
                                         blank = all)</span></label>
-                                <select v-model="form.instance_id" class="form-input">
+                                <select v-model="form.instance_id" class="form-input" :disabled="editingId !== null">
                                     <option :value="null">All instances</option>
                                     <option v-for="inst in instances" :key="inst.id" :value="inst.id">{{ inst.name }}
                                     </option>
                                 </select>
+                                <p v-if="editingId" class="text-xs text-gray-400 mt-1">Instance mapping cannot be
+                                    changed after creation.</p>
                             </div>
                             <div>
                                 <label class="form-label">Events <span class="text-red-500">*</span></label>
@@ -166,9 +164,9 @@
                             <p v-if="serverError" class="text-sm text-red-600">{{ serverError }}</p>
                             <div class="flex gap-3 pt-2">
                                 <button type="button" class="btn-secondary flex-1"
-                                    @click="showCreate = false">Cancel</button>
-                                <button type="submit" class="btn-primary flex-1" :disabled="creating">
-                                    {{ creating ? 'Creating…' : 'Create Webhook' }}
+                                    @click="showForm = false">Cancel</button>
+                                <button type="submit" class="btn-primary flex-1" :disabled="saving">
+                                    {{ saving ? 'Saving…' : (editingId ? 'Save Changes' : 'Create Webhook') }}
                                 </button>
                             </div>
                         </form>
@@ -177,7 +175,6 @@
             </Transition>
         </Teleport>
 
-        <!-- Logs Drawer -->
         <Teleport to="body">
             <Transition name="slide">
                 <div v-if="logsWebhook" class="fixed inset-0 z-50 flex justify-end">
@@ -204,7 +201,7 @@
                                                 {{ log.success ? 'Success' : 'Failed' }}
                                             </span>
                                             <span class="text-xs text-gray-400">HTTP {{ log.http_status ?? 'ERR'
-                                                }}</span>
+                                            }}</span>
                                             <span class="text-xs text-gray-400">Attempt {{ log.attempt }}</span>
                                         </div>
                                         <span class="text-xs text-gray-400">{{ log.duration_ms }}ms · {{
@@ -229,7 +226,7 @@ import { ref, reactive, onMounted } from 'vue'
 import AppLayout from '@/Components/Layout/AppLayout.vue'
 import {
     PlusIcon, GlobeAltIcon, BoltIcon, ClipboardDocumentListIcon,
-    PauseIcon, PlayIcon, TrashIcon, XMarkIcon,
+    PauseIcon, PlayIcon, TrashIcon, XMarkIcon, PencilIcon,
     EyeIcon, EyeSlashIcon, ClipboardDocumentIcon,
 } from '@heroicons/vue/24/outline'
 import { webhookApi, instanceApi } from '@/composables/useApi'
@@ -238,10 +235,11 @@ const webhooks = ref([])
 const instances = ref([])
 const logs = ref([])
 const loading = ref(true)
-const creating = ref(false)
+const saving = ref(false)
 const pinging = ref(null)
 const logsLoading = ref(false)
-const showCreate = ref(false)
+const showForm = ref(false)
+const editingId = ref(null)
 const showSecret = ref(null)
 const logsWebhook = ref(null)
 const serverError = ref(null)
@@ -280,20 +278,58 @@ async function fetchWebhooks() {
     }
 }
 
-const createWebhook = async () => {
-    creating.value = true
+const openCreateModal = () => {
+    editingId.value = null
+    form.name = ''
+    form.url = ''
+    form.instance_id = null
+    form.events = ['message.inbound']
+    Object.keys(errors).forEach(k => delete errors[k])
+    serverError.value = null
+    showForm.value = true
+}
+
+const openEditModal = (wh) => {
+    editingId.value = wh.id
+    form.name = wh.name
+    form.url = wh.url
+    form.instance_id = wh.instance?.id ?? null
+    form.events = [...wh.events]
+    Object.keys(errors).forEach(k => delete errors[k])
+    serverError.value = null
+    showForm.value = true
+}
+
+const saveWebhook = async () => {
+    saving.value = true
     serverError.value = null
     Object.keys(errors).forEach(k => delete errors[k])
+
     try {
-        const { data } = await webhookApi.create(form)
-        webhooks.value.unshift(data.data)
-        showCreate.value = false
-        form.name = ''; form.url = ''; form.instance_id = null; form.events = ['message.inbound']
+        if (editingId.value) {
+            // Edit Flow
+            const payload = {
+                name: form.name,
+                url: form.url,
+                events: form.events,
+            }
+            const { data } = await webhookApi.update(editingId.value, payload)
+            const idx = webhooks.value.findIndex(w => w.id === editingId.value)
+            if (idx !== -1) webhooks.value[idx] = data.data
+        } else {
+            // Create Flow
+            const { data } = await webhookApi.create(form)
+            webhooks.value.unshift(data.data)
+        }
+        showForm.value = false
     } catch (err) {
-        if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
-        else serverError.value = err.response?.data?.message ?? 'Failed to create.'
+        if (err.response?.status === 422) {
+            Object.assign(errors, err.response.data.errors ?? {})
+        } else {
+            serverError.value = err.response?.data?.message ?? 'Failed to save webhook.'
+        }
     } finally {
-        creating.value = false
+        saving.value = false
     }
 }
 

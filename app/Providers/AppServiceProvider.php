@@ -7,6 +7,7 @@ use App\Http\Middleware\EnsureUserIsActive;
 use App\Http\Middleware\InternalSecretMiddleware;
 use App\Http\Middleware\RoleMiddleware;
 use App\Services\BaileysClient;
+use App\Services\CampaignService;
 use App\Services\CreditService;
 use App\Services\InstanceService;
 use App\Services\MessageService;
@@ -27,6 +28,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(TokenService::class);
         $this->app->singleton(RateLimiterService::class);
         $this->app->singleton(WebhookService::class);
+        $this->app->singleton(CampaignService::class);
         $this->app->singleton(InstanceService::class, function ($app) {
             return new InstanceService($app->make(CreditService::class));
         });

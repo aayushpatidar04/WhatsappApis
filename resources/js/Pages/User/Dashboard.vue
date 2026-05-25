@@ -10,12 +10,12 @@
         </div>
 
         <!-- Stats row -->
-        <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="grid grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
             <StatCard :icon="DevicePhoneMobileIcon" label="Total Instances" :value="stats.total_instances"
                 color="blue" />
             <StatCard :icon="CheckCircleIcon" label="Active" :value="stats.active_instances" color="green" />
             <StatCard :icon="PaperAirplaneIcon" label="Sent Today" :value="stats.messages_today" color="purple" />
-            <StatCard :icon="InboxIcon" label="Received Today" :value="stats.messages_received" color="teal" />
+            <!-- <StatCard :icon="InboxIcon" label="Received Today" :value="stats.messages_received" color="teal" /> -->
         </div>
 
         <!-- Secondary stats -->
@@ -105,11 +105,11 @@
                             <PaperAirplaneIcon class="w-5 h-5 text-blue-600 flex-shrink-0" />
                             <span class="text-sm font-medium text-blue-700">Send Message</span>
                         </Link>
-                        <Link :href="route('user.inbox')"
+                        <!-- <Link :href="route('user.inbox')"
                             class="flex items-center gap-3 p-3 bg-green-50 hover:bg-green-100 rounded-xl transition-colors">
                             <InboxIcon class="w-5 h-5 text-green-600 flex-shrink-0" />
                             <span class="text-sm font-medium text-green-700">View Inbox</span>
-                        </Link>
+                        </Link> -->
                         <Link :href="route('user.tokens')"
                             class="flex items-center gap-3 p-3 bg-purple-50 hover:bg-purple-100 rounded-xl transition-colors">
                             <KeyIcon class="w-5 h-5 text-purple-600 flex-shrink-0" />

@@ -19,7 +19,7 @@ class BaileysClient
 
     public function __construct()
     {
-        $this->baseUrl = rtrim(config('services.baileys.url', 'http://127.0.0.1:3000'), '/');
+        $this->baseUrl = rtrim(config('services.baileys.url', 'https://wa-api.intouchsoftwaresolution.in'), '/');
         $this->secret  = config('services.baileys.secret', '');
         $this->timeout = (int) config('services.baileys.timeout', 10);
     }
@@ -186,5 +186,21 @@ class BaileysClient
                 'Content-Type'      => 'application/json',
             ])
             ->timeout($this->timeout);
+    }
+
+    // Add this inside App\Services\BaileysClient
+
+    /**
+     * Get the status of all instances currently in Node.js memory.
+     */
+    public function getBulkStatus(): array
+    {
+        try {
+            $res = $this->http()->get('/instances/bulk-status');
+            return $res->json('data') ?? [];
+        } catch (\Throwable $e) {
+            Log::error("BaileysClient::getBulkStatus failed: {$e->getMessage()}");
+            return [];
+        }
     }
 }

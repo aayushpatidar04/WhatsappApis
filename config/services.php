@@ -37,8 +37,9 @@ return [
 
     // Baileys Node.js Microservice
     'baileys' => [
-        'url'    => env('BAILEYS_SERVICE_URL', 'http://127.0.0.1:3000'),
-        'secret' => env('BAILEYS_INTERNAL_SECRET', ''),
+        'url'    => env('BAILEYS_SERVICE_URL', 'https://wa-api.intouchsoftwaresolution.in'),
+        'secret' => env('BAILEYS_INTERNAL_SECRET', 'aayush-patidar'),
+        'timeout'=> env('BAILEYS_TIMEOUT', 10),
     ],
  
     // Instance Credit System
@@ -52,6 +53,34 @@ return [
         'default_per_minute' => env('DEFAULT_MESSAGES_PER_MINUTE', 20),
         'min_per_minute'     => env('MIN_MESSAGES_PER_MINUTE', 5),
         'max_per_minute'     => env('MAX_MESSAGES_PER_MINUTE', 60),
+    ],
+
+    // ── Pusher ────────────────────────────────────────────────────────────────
+    'pusher' => [
+        'secret'  => env('PUSHER_APP_SECRET'),
+        'app_id'  => env('PUSHER_APP_ID'),
+        'options' => [
+            'cluster' => env('PUSHER_APP_CLUSTER', 'ap2'),
+            'useTLS'  => true,
+        ],
+    ],
+
+    // ── Razorpay ──────────────────────────────────────────────────────────────
+    'razorpay' => [
+        'key_id'     => env('RAZORPAY_KEY_ID', ''),
+        'key_secret' => env('RAZORPAY_KEY_SECRET', ''),
+    ],
+ 
+    // ── Stripe ────────────────────────────────────────────────────────────────
+    'stripe' => [
+        'publishable_key' => env('STRIPE_PUBLISHABLE_KEY', ''),
+        'secret_key'      => env('STRIPE_SECRET_KEY', ''),
+        'webhook_secret'  => env('STRIPE_WEBHOOK_SECRET', ''),
+    ],
+ 
+    // ── Active payment gateway ────────────────────────────────────────────────
+    'payment' => [
+        'default' => env('PAYMENT_GATEWAY', 'razorpay'),  // 'razorpay' | 'stripe'
     ],
 
 ];

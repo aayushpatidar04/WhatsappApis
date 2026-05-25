@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Inertia\Inertia;
@@ -20,7 +21,7 @@ class ClientController extends Controller
      */
     public function index(): Response
     {
-        $clients = Client::withTrashed()->withCount(['users', 'allInstances'])
+        $clients = Client::withTrashed()->withCount(['users', 'allInstances'])->with(['admin'])
             ->orderByDesc('created_at')
             ->paginate(20);
 
@@ -87,7 +88,7 @@ class ClientController extends Controller
     {
         $client = Client::withTrashed()->findOrFail($id);
         $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:255'],
+            'client_name' => ['sometimes', 'string', 'max:255'],
             'max_rate_per_minute' => ['sometimes', 'integer', 'min:5', 'max:60'],
             'max_instances_per_user' => ['sometimes', 'integer', 'min:1', 'max:50'],
             'is_active' => ['sometimes', 'boolean'],
@@ -101,7 +102,8 @@ class ClientController extends Controller
                 $client->users()->update(['is_active' => true]);
             }
         }
-
+        $validated['name'] = $validated['client_name'] ?? $client->name;
+        
         $client->update($validated);
 
         return response()->json([

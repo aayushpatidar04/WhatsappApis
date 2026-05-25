@@ -6,10 +6,11 @@
                 <p class="text-sm text-gray-400 mt-0.5">{{ clients.total }} tenant{{ clients.total !== 1 ? 's' : '' }}
                     on the platform</p>
             </div>
-            <button class="btn-primary" @click="showCreate = true">
+            <button class="btn-primary" @click="openCreate">
                 <PlusIcon class="w-4 h-4" />
                 New Client
             </button>
+
         </div>
 
         <!-- Clients table -->
@@ -66,6 +67,11 @@
                             <td class="py-3 px-4 text-gray-400 text-xs">{{ formatDate(client.created_at) }}</td>
                             <td class="py-3 px-4">
                                 <div class="flex gap-1 justify-end">
+                                    <button class="p-1.5 hover:bg-gray-100 text-gray-500 rounded-lg"
+                                        @click="openEdit(client)" title="Edit Client">
+                                        <PencilIcon class="w-4 h-4" />
+                                    </button>
+
                                     <button class="p-1.5 hover:bg-blue-50 text-blue-500 rounded-lg"
                                         @click="openCredit(client)" title="Add credits">
                                         <CreditCardIcon class="w-4 h-4" />
@@ -90,7 +96,8 @@
                     <div class="absolute inset-0 bg-black/50" @click="showCreate = false" />
                     <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg">
                         <div class="flex items-center justify-between px-6 py-5 border-b">
-                            <h2 class="font-bold text-gray-900">Create New Client</h2>
+                            <h2 class="font-bold text-gray-900">{{ isEditing ? 'Edit Client' : 'Create New Client' }}
+                            </h2>
                             <button @click="showCreate = false" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
                                 <XMarkIcon class="w-5 h-5" />
                             </button>
@@ -114,32 +121,36 @@
                                         min="1" max="50" />
                                 </div>
                             </div>
-                            <hr class="border-gray-100" />
-                            <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Master Admin Account
-                            </p>
-                            <div>
-                                <label class="form-label">Admin Name <span class="text-red-500">*</span></label>
-                                <input v-model="form.admin_name" type="text" class="form-input" required
-                                    maxlength="255" />
-                                <p v-if="errors.admin_name" class="form-error">{{ errors.admin_name }}</p>
-                            </div>
-                            <div>
-                                <label class="form-label">Admin Email <span class="text-red-500">*</span></label>
-                                <input v-model="form.admin_email" type="email" class="form-input" required />
-                                <p v-if="errors.admin_email" class="form-error">{{ errors.admin_email }}</p>
-                            </div>
-                            <div>
-                                <label class="form-label">Admin Password <span class="text-red-500">*</span></label>
-                                <input v-model="form.admin_password" type="password" class="form-input" required
-                                    minlength="8" />
-                                <p v-if="errors.admin_password" class="form-error">{{ errors.admin_password }}</p>
+                            <div v-if="!isEditing">
+                                <hr class="border-gray-300 mb-2" />
+                                <p class="text-xs font-semibold text-gray-500 uppercase tracking-wide my-2">Master Admin Account
+                                </p>
+                                <div class="my-2">
+                                    <label class="form-label">Admin Name <span class="text-red-500">*</span></label>
+                                    <input v-model="form.admin_name" type="text" class="form-input" required
+                                        maxlength="255" />
+                                    <p v-if="errors.admin_name" class="form-error">{{ errors.admin_name }}</p>
+                                </div>
+                                <div class="my-2">
+                                    <label class="form-label">Admin Email <span class="text-red-500">*</span></label>
+                                    <input v-model="form.admin_email" type="email" class="form-input" required />
+                                    <p v-if="errors.admin_email" class="form-error">{{ errors.admin_email }}</p>
+                                </div>
+                                <div class="my-2">
+                                    <label class="form-label">Admin Password <span class="text-red-500">*</span></label>
+                                    <input v-model="form.admin_password" type="password" class="form-input" required
+                                        minlength="8" />
+                                    <p v-if="errors.admin_password" class="form-error">{{ errors.admin_password }}</p>
+                                </div>
                             </div>
                             <div class="flex gap-3 pt-2">
                                 <button type="button" class="btn-secondary flex-1"
                                     @click="showCreate = false">Cancel</button>
                                 <button type="submit" class="btn-primary flex-1" :disabled="loading">
-                                    {{ loading ? 'Creating…' : 'Create Client' }}
+                                    {{ loading ? (isEditing ? 'Saving…' : 'Creating…') : (isEditing ? 'Save Changes' :
+                                        'Create Client') }}
                                 </button>
+
                             </div>
                         </form>
                     </div>
@@ -185,7 +196,7 @@ import { ref, reactive } from 'vue'
 import { router } from '@inertiajs/vue3'
 import AppLayout from '@/Components/Layout/AppLayout.vue'
 import {
-    PlusIcon, BuildingOfficeIcon, CreditCardIcon,
+    PlusIcon, BuildingOfficeIcon, CreditCardIcon, PencilIcon,
     XMarkIcon, PauseIcon, PlayIcon,
 } from '@heroicons/vue/24/outline'
 import axios from 'axios'
@@ -200,23 +211,64 @@ const errors = reactive({})
 const creditClient = ref(null)
 const creditAmount = ref(null)
 const creditRef = ref('')
+const isEditing = ref(false)
+const editingId = ref(null)
 
 const form = reactive({
     client_name: '', admin_name: '', admin_email: '', admin_password: '',
     max_rate_per_minute: 20, max_instances_per_user: 5,
 })
 
+const openCreate = () => {
+    isEditing.value = false
+    editingId.value = null
+    Object.assign(form, {
+        client_name: '', admin_name: '', admin_email: '', admin_password: '',
+        max_rate_per_minute: 20, max_instances_per_user: 5,
+    })
+    showCreate.value = true
+}
+
+const openEdit = (client) => {
+    isEditing.value = true
+    editingId.value = client.id
+    Object.assign(form, {
+        client_name: client.name,
+        max_rate_per_minute: client.max_rate_per_minute,
+        max_instances_per_user: client.max_instances_per_user,
+    })
+    showCreate.value = true
+}
+
 const createClient = async () => {
     loading.value = true
     Object.keys(errors).forEach(k => delete errors[k])
     try {
-        await axios.post(route('super.clients.store'), form)
+        if (isEditing.value && editingId.value) {
+            // Update existing client
+            await axios.patch(route('super.clients.update', editingId.value), form)
+        } else {
+            // Create new client
+            await axios.post(route('super.clients.store'), form)
+        }
+
         showCreate.value = false
-        Object.assign(form, { client_name: '', admin_name: '', admin_email: '', admin_password: '', max_rate_per_minute: 20, max_instances_per_user: 5 })
+        isEditing.value = false
+        editingId.value = null
+
+        Object.assign(form, {
+            client_name: '', admin_name: '', admin_email: '', admin_password: '',
+            max_rate_per_minute: 20, max_instances_per_user: 5,
+        })
+
         router.reload({ only: ['clients'] })
     } catch (err) {
-        if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
-    } finally { loading.value = false }
+        if (err.response?.status === 422) {
+            Object.assign(errors, err.response.data.errors ?? {})
+        }
+    } finally {
+        loading.value = false
+    }
 }
 
 const toggleActive = async (client) => {

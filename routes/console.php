@@ -4,6 +4,7 @@ use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Log;
+use App\Jobs\SyncInstanceStatuses;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -36,6 +37,16 @@ app(Schedule::class)->command('messages:cleanup --days=90')
     ->dailyAt('02:00')
     ->withoutOverlapping();
 
+// Launch scheduled campaigns whose schedule_time has arrived
+app(Schedule::class)->command('campaigns:dispatch')
+    ->everyMinute()->withoutOverlapping()->runInBackground();
+
+// ── Credit accrual ───────────────────────────────────────────
+app(Schedule::class)->command('credits:accrue-daily')
+    ->everyMinute()->withoutOverlapping();
+
 // Queue cleanup
 app(Schedule::class)->command('queue:prune-failed --hours=720')
     ->daily();
+
+app(Schedule::class)->job(new SyncInstanceStatuses)->everyMinute()->withoutOverlapping();

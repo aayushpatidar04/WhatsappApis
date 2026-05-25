@@ -3,6 +3,7 @@
 use App\Ai\Agents\SalesCoach;
 use App\Http\Controllers\Api\GatewayController;
 use App\Http\Controllers\Api\InternalController;
+use App\Http\Controllers\Web\BillingController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -61,7 +62,7 @@ Route::get('/ping', fn() => response()->json(['status' => 'ok', 'timestamp' => n
 
 // ─── Token-authenticated routes ───────────────────────────────────────────────
 Route::middleware('api.token')->group(function () {
-    
+
     /*
     |----------------------------------------------------------------------
     | Phase 2+ routes — stubs defined here, implemented in later phases
@@ -111,6 +112,10 @@ Route::prefix('internal')->middleware('internal.secret')->group(function () {
     Route::post('/session-connected', fn() => response()->json(['message' => 'Available in Phase 2'], 501));
     Route::post('/session-dropped', fn() => response()->json(['message' => 'Available in Phase 2'], 501));
 });
+
+Route::post('/stripe/webhook', [BillingController::class, 'stripeWebhook'])
+    ->name('stripe.webhook')
+    ->withoutMiddleware([\Illuminate\Foundation\Http\Middleware\VerifyCsrfToken::class]);
 
 
 

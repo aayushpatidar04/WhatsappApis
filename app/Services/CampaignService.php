@@ -95,6 +95,36 @@ class CampaignService
         return $count;
     }
 
+    public function syncRecipients(Campaign $campaign, array $options): int
+    {
+        return DB::transaction(function () use ($campaign, $options) {
+            // 1. Delete all currently 'pending' recipients.
+            // We ONLY delete pending to ensure we never accidentally delete 
+            // records of messages that have already been sent/delivered.
+            $campaign->recipients()->where('status', 'pending')->delete();
+
+            // 2. Update the Campaign's group ID tracking 
+            if (!empty($options['phones'])) {
+                // If they switched to manual phones, remove the group association
+                $campaign->update(['contact_group_id' => null]);
+            } elseif (array_key_exists('contact_group_id', $options)) {
+                // If they selected a group, update it
+                $campaign->update(['contact_group_id' => $options['contact_group_id']]);
+            }
+
+            // 3. Re-add the fresh list of recipients using your existing logic
+            $this->addRecipients($campaign, $options);
+
+            // 4. Recalculate the exact total recipients
+            // (Because addRecipients overwrites total_recipients with just the *new* count,
+            // we need to recalculate the true total in case there are already sent messages)
+            $trueTotal = $campaign->recipients()->count();
+            $campaign->update(['total_recipients' => $trueTotal]);
+
+            return $trueTotal;
+        });
+    }
+
     /**
      * Launch a campaign (move to running, dispatch all recipient jobs).
      */

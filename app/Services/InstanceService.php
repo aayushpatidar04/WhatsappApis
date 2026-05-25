@@ -126,7 +126,7 @@ class InstanceService
 
         DB::transaction(function () use ($instance, $actor) {
             // Return unused credits
-            $this->creditService->deallocateFromInstance($instance, $actor?->id);
+            // $this->creditService->deallocateFromInstance($instance, $actor?->id);
 
             $instance->delete();
         });

@@ -129,6 +129,25 @@ class WhatsappInstance extends Model
         return max(0, (int) now()->diffInDays($this->expires_at, false));
     }
 
+    public function recalculateExpiry(): void
+    {
+        if (!$this->activated_at) return;
+ 
+        $this->expires_at = $this->activated_at->copy()->addMonths($this->credits_assigned);
+        $this->save();
+    }
+
+    public function addCredits(int $credits): void
+    {
+        $this->credits_assigned += $credits;
+        $this->recalculateExpiry();
+    }
+
+    public function queueName(): string
+    {
+        return 'instance-' . substr($this->instance_token, 0, 16);
+    }
+
     // ─── Scopes ───────────────────────────────────────────────────────────────
 
     public function scopeForClient($query, int $clientId)

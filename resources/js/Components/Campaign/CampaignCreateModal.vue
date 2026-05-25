@@ -5,10 +5,9 @@
                 <div class="absolute inset-0 bg-black/50" @click="$emit('close')" />
                 <div class="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
 
-                    <!-- Header -->
                     <div class="flex items-center justify-between px-6 py-5 border-b sticky top-0 bg-white z-10">
                         <div>
-                            <h2 class="font-bold text-gray-900">New Campaign</h2>
+                            <h2 class="font-bold text-gray-900">{{ isEditing ? 'Edit Campaign' : 'New Campaign' }}</h2>
                             <p class="text-xs text-gray-400 mt-0.5">Step {{ step }} of 3</p>
                         </div>
                         <button @click="$emit('close')" class="p-2 hover:bg-gray-100 rounded-lg text-gray-400">
@@ -16,7 +15,6 @@
                         </button>
                     </div>
 
-                    <!-- Step progress -->
                     <div class="px-6 py-3 border-b bg-gray-50">
                         <div class="flex gap-2">
                             <div v-for="s in 3" :key="s"
@@ -29,7 +27,6 @@
                         </div>
                     </div>
 
-                    <!-- Step 1: Setup -->
                     <div v-show="step === 1" class="px-6 py-5 space-y-4">
                         <div>
                             <label class="form-label">Campaign Name <span class="text-red-500">*</span></label>
@@ -42,16 +39,18 @@
                         <div>
                             <label class="form-label">WhatsApp Instance <span class="text-red-500">*</span></label>
                             <select v-model="form.instance_id" class="form-input"
-                                :class="{ 'border-red-400': errors.instance_id }">
+                                :class="{ 'border-red-400': errors.instance_id }" :disabled="isEditing">
                                 <option :value="null">Select instance…</option>
                                 <option v-for="inst in instances" :key="inst.id" :value="inst.id">
                                     {{ inst.name }} — {{ inst.phone_number }}
                                 </option>
                             </select>
                             <p v-if="errors.instance_id" class="form-error">{{ errors.instance_id[0] }}</p>
-                            <p v-if="!instances.length" class="text-xs text-orange-500 mt-1">
+                            <p v-if="!instances.length && !isEditing" class="text-xs text-orange-500 mt-1">
                                 No active instances. Connect a WhatsApp number first.
                             </p>
+                            <p v-if="isEditing" class="text-xs text-gray-400 mt-1">Instance cannot be changed after
+                                creation.</p>
                         </div>
 
                         <div>
@@ -73,23 +72,24 @@
                             </div>
                         </div>
                         <p class="text-xs text-gray-400">Send window limits the hours during which messages are
-                            dispatched (anti-ban).</p>
+                            dispatched.</p>
                     </div>
 
-                    <!-- Step 2: Message -->
                     <div v-show="step === 2" class="px-6 py-5 space-y-4">
                         <div>
                             <label class="form-label">Message Type</label>
                             <div class="flex flex-wrap gap-2 mt-1">
-                                <button v-for="t in messageTypes" :key="t.value" @click="form.message_type = t.value"
-                                    :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                                        form.message_type === t.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200']">
+                                <button v-for="t in messageTypes" :key="t.value"
+                                    @click="!isEditing && (form.message_type = t.value)" :disabled="isEditing" :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                                        form.message_type === t.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600',
+                                        !isEditing ? 'hover:bg-gray-200' : 'opacity-70 cursor-not-allowed']">
                                     {{ t.label }}
                                 </button>
                             </div>
+                            <p v-if="isEditing" class="text-xs text-gray-400 mt-2">Message type cannot be changed after
+                                creation.</p>
                         </div>
 
-                        <!-- Text -->
                         <div v-if="form.message_type === 'text'">
                             <label class="form-label">Message <span class="text-red-500">*</span></label>
                             <textarea v-model="form.message_payload.message" class="form-input resize-none" rows="4"
@@ -99,7 +99,6 @@
                                     class="bg-gray-100 px-1 rounded">{{ phone }}</code> for personalisation.</p>
                         </div>
 
-                        <!-- Image / Video -->
                         <div v-if="['image', 'video'].includes(form.message_type)" class="space-y-3">
                             <div>
                                 <label class="form-label">Media URL <span class="text-red-500">*</span></label>
@@ -114,7 +113,6 @@
                             </div>
                         </div>
 
-                        <!-- Document -->
                         <div v-if="form.message_type === 'document'" class="space-y-3">
                             <div>
                                 <label class="form-label">Document URL <span class="text-red-500">*</span></label>
@@ -135,7 +133,6 @@
                             </div>
                         </div>
 
-                        <!-- Poll -->
                         <div v-if="form.message_type === 'poll'" class="space-y-3">
                             <div>
                                 <label class="form-label">Question <span class="text-red-500">*</span></label>
@@ -145,7 +142,7 @@
                             <div>
                                 <label class="form-label">Options (min 2)</label>
                                 <div class="space-y-2">
-                                    <div v-for="(opt, idx) in (form.message_payload.options ?? ['', ''])" :key="idx"
+                                    <div v-for="(opt, idx) in form.message_payload.options" :key="idx"
                                         class="flex gap-2">
                                         <input v-model="form.message_payload.options[idx]" type="text"
                                             class="form-input" :placeholder="`Option ${idx + 1}`" />
@@ -155,13 +152,12 @@
                                         </button>
                                     </div>
                                 </div>
-                                <button v-if="(form.message_payload.options?.length ?? 0) < 12"
-                                    @click="form.message_payload.options = [...(form.message_payload.options ?? ['']), '']"
+                                <button v-if="form.message_payload.options.length < 12"
+                                    @click="form.message_payload.options.push('')"
                                     class="text-blue-600 text-sm mt-2 hover:underline">+ Add option</button>
                             </div>
                         </div>
 
-                        <!-- Preview -->
                         <div v-if="messagePreview" class="bg-green-50 border border-green-200 rounded-xl p-4">
                             <p class="text-xs text-gray-400 font-semibold uppercase tracking-wide mb-2">Preview (sample
                                 recipient)</p>
@@ -169,9 +165,7 @@
                         </div>
                     </div>
 
-                    <!-- Step 3: Recipients -->
                     <div v-show="step === 3" class="px-6 py-5 space-y-4">
-                        <!-- Tab: Group or Manual -->
                         <div class="flex gap-2">
                             <button @click="recipientMode = 'group'"
                                 :class="['flex-1 py-2.5 rounded-xl text-sm font-medium border transition-colors',
@@ -185,7 +179,6 @@
                             </button>
                         </div>
 
-                        <!-- Group mode -->
                         <div v-if="recipientMode === 'group'">
                             <label class="form-label">Contact Group</label>
                             <select v-model="form.contact_group_id" class="form-input">
@@ -199,7 +192,6 @@
                             </p>
                         </div>
 
-                        <!-- Manual phones mode -->
                         <div v-if="recipientMode === 'phones'">
                             <label class="form-label">Phone Numbers</label>
                             <textarea v-model="phonesRaw" class="form-input resize-none font-mono text-xs" rows="8"
@@ -207,9 +199,12 @@
                             <p class="text-xs text-gray-400 mt-1">
                                 {{ phoneCount }} number{{ phoneCount !== 1 ? 's' : '' }} detected.
                             </p>
+                            <p v-if="isEditing" class="text-xs text-blue-500 mt-1">
+                                Note: Saving new numbers will replace or append to existing recipients based on your
+                                server logic.
+                            </p>
                         </div>
 
-                        <!-- Summary box -->
                         <div class="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm space-y-1">
                             <p><strong>Campaign:</strong> {{ form.name || '—' }}</p>
                             <p><strong>Instance:</strong> {{ selectedInstance?.name || '—' }}</p>
@@ -217,21 +212,19 @@
                             <p><strong>Recipients:</strong> {{ recipientMode === 'group' ? (selectedGroup?.name ?? '—')
                                 : phoneCount + ' numbers' }}</p>
                             <p v-if="form.schedule_time"><strong>Scheduled:</strong> {{ formatDate(form.schedule_time)
-                                }}</p>
+                            }}</p>
                         </div>
                     </div>
 
-                    <!-- Error banner -->
                     <div v-if="serverError" class="px-6 py-3 bg-red-50 border-t border-red-100 text-sm text-red-700">
                         {{ serverError }}
                     </div>
 
-                    <!-- Footer nav -->
                     <div class="flex gap-3 px-6 py-5 border-t sticky bottom-0 bg-white">
                         <button v-if="step > 1" class="btn-secondary flex-1" @click="step--">← Back</button>
                         <button v-if="step < 3" class="btn-primary flex-1" @click="nextStep">Next →</button>
                         <button v-if="step === 3" class="btn-primary flex-1" @click="submit" :disabled="saving">
-                            {{ saving ? 'Creating…' : 'Create Campaign' }}
+                            {{ saving ? (isEditing ? 'Saving…' : 'Creating…') : (isEditing ? 'Save Changes' : 'Create Campaign') }}
                         </button>
                     </div>
 
@@ -250,9 +243,10 @@ const props = defineProps({
     show: { type: Boolean, required: true },
     instances: { type: Array, default: () => [] },
     groups: { type: Array, default: () => [] },
+    editCampaign: { type: Object, default: null }
 })
 
-const emit = defineEmits(['close', 'created'])
+const emit = defineEmits(['close', 'created', 'updated'])
 
 const step = ref(1)
 const saving = ref(false)
@@ -261,15 +255,86 @@ const recipientMode = ref('group')
 const phonesRaw = ref('')
 const errors = reactive({})
 
+const isEditing = computed(() => !!props.editCampaign)
+
 const form = reactive({
     name: '',
     instance_id: null,
     message_type: 'text',
-    message_payload: { message: '', options: ['', ''] },
+    message_payload: { message: '', options: ['', ''], media_url: '', caption: '', filename: '', mimetype: '', question: '' },
     schedule_time: '',
     send_window_start: '',
     send_window_end: '',
     contact_group_id: null,
+})
+
+// Populate form when modal opens
+watch(() => props.show, (isVisible) => {
+    if (isVisible) {
+        serverError.value = null
+        Object.keys(errors).forEach(k => delete errors[k])
+        step.value = 1
+
+        if (props.editCampaign) {
+            // Edit Flow
+            form.name = props.editCampaign.name
+
+            // Explicitly cast to Number so the <select> matches correctly
+            form.instance_id = Number(props.editCampaign.instance_id || props.editCampaign.instance?.id) || null
+            form.message_type = props.editCampaign.message_type
+
+            // ✅ FIX 1: Safely parse JSON strings if Laravel didn't cast them automatically
+            let payload = props.editCampaign.message_payload || {}
+            
+            if (typeof payload === 'string') {
+                try { payload = JSON.parse(payload) } catch (e) { payload = {} }
+            }
+
+            // ✅ FIX 2: Explicitly assign deep properties to maintain Vue's reactivity bindings
+            form.message_payload.message = payload.message || ''
+            form.message_payload.media_url = payload.media_url || ''
+            form.message_payload.caption = payload.caption || ''
+            form.message_payload.filename = payload.filename || ''
+            form.message_payload.mimetype = payload.mimetype || ''
+            form.message_payload.question = payload.question || ''
+            form.message_payload.options = Array.isArray(payload.options) && payload.options.length >= 2
+                ? [...payload.options]
+                : ['', '']
+
+            form.schedule_time = props.editCampaign.schedule_time ? new Date(props.editCampaign.schedule_time).toISOString().slice(0, 16) : ''
+            form.send_window_start = props.editCampaign.send_window_start ? props.editCampaign.send_window_start.slice(0, 5) : ''
+            form.send_window_end = props.editCampaign.send_window_end ? props.editCampaign.send_window_end.slice(0, 5) : ''
+
+            // ✅ FIX 3: Accurately Pre-fill Recipients
+            if (props.editCampaign.contact_group_id) {
+                recipientMode.value = 'group'
+                // Explicit cast to Number for select binding
+                form.contact_group_id = Number(props.editCampaign.contact_group_id)
+                phonesRaw.value = ''
+            } else {
+                recipientMode.value = 'phones'
+                form.contact_group_id = null
+                // If backend provides the recipients array, load them into the manual phones box!
+                if (props.editCampaign.recipients && Array.isArray(props.editCampaign.recipients)) {
+                    phonesRaw.value = props.editCampaign.recipients.join('\n');
+                } else if (props.editCampaign.phones && Array.isArray(props.editCampaign.phones)) {
+                    phonesRaw.value = props.editCampaign.phones.join('\n')
+                } else {
+                    phonesRaw.value = ''
+                }
+            }
+
+        } else {
+            // Create Flow: Reset form completely
+            phonesRaw.value = ''
+            recipientMode.value = 'group'
+            Object.assign(form, {
+                name: '', instance_id: null, message_type: 'text',
+                message_payload: { message: '', options: ['', ''], media_url: '', caption: '', filename: '', mimetype: '', question: '' },
+                schedule_time: '', send_window_start: '', send_window_end: '', contact_group_id: null
+            })
+        }
+    }
 })
 
 const messageTypes = [
@@ -301,47 +366,57 @@ const nextStep = () => {
     serverError.value = null
     if (step.value === 1) {
         if (!form.name) { serverError.value = 'Campaign name is required.'; return }
-        if (!form.instance_id) { serverError.value = 'Select a WhatsApp instance.'; return }
+        if (!form.instance_id && !isEditing.value) { serverError.value = 'Select a WhatsApp instance.'; return }
     }
-    if (step.value === 2) {
+
+    if (step.value === 2 && !isEditing.value) {
         const p = form.message_payload
         if (form.message_type === 'text' && !p.message) { serverError.value = 'Message text is required.'; return }
         if (['image', 'video', 'document'].includes(form.message_type) && !p.media_url) { serverError.value = 'Media URL is required.'; return }
         if (form.message_type === 'poll' && !p.question) { serverError.value = 'Poll question is required.'; return }
     }
+
     step.value++
 }
 
 const submit = async () => {
     saving.value = true; serverError.value = null
-
     const phones = phonesRaw.value.split('\n').map(l => l.trim()).filter(Boolean)
 
-    const payload = {
-        name: form.name,
-        instance_id: form.instance_id,
-        message_type: form.message_type,
-        message_payload: form.message_payload,
-        schedule_time: form.schedule_time || undefined,
-        send_window_start: form.send_window_start || undefined,
-        send_window_end: form.send_window_end || undefined,
-        contact_group_id: recipientMode.value === 'group' ? form.contact_group_id : undefined,
-        phones: recipientMode.value === 'phones' ? phones : undefined,
-    }
-
     try {
-        const { data } = await campaignApi.create(payload)
-        emit('created', data.data)
-        // Reset form
-        step.value = 1; phonesRaw.value = ''
-        Object.assign(form, {
-            name: '', instance_id: null, message_type: 'text',
-            message_payload: { message: '', options: ['', ''] }, schedule_time: '',
-            send_window_start: '', send_window_end: '', contact_group_id: null
-        })
+        if (isEditing.value) {
+            // Edit Payload
+            const payload = {
+                name: form.name,
+                message_payload: form.message_payload,
+                schedule_time: form.schedule_time || undefined,
+                send_window_start: form.send_window_start || undefined,
+                send_window_end: form.send_window_end || undefined,
+                contact_group_id: recipientMode.value === 'group' ? form.contact_group_id : undefined,
+                phones: recipientMode.value === 'phones' ? phones : undefined,
+            }
+            const { data } = await campaignApi.update(props.editCampaign.id, payload)
+            emit('updated', data.data)
+
+        } else {
+            // Create Payload
+            const payload = {
+                name: form.name,
+                instance_id: form.instance_id,
+                message_type: form.message_type,
+                message_payload: form.message_payload,
+                schedule_time: form.schedule_time || undefined,
+                send_window_start: form.send_window_start || undefined,
+                send_window_end: form.send_window_end || undefined,
+                contact_group_id: recipientMode.value === 'group' ? form.contact_group_id : undefined,
+                phones: recipientMode.value === 'phones' ? phones : undefined,
+            }
+            const { data } = await campaignApi.create(payload)
+            emit('created', data.data)
+        }
     } catch (err) {
         if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
-        serverError.value = err.response?.data?.message ?? 'Failed to create campaign.'
+        serverError.value = err.response?.data?.message ?? (isEditing.value ? 'Failed to update campaign.' : 'Failed to create campaign.')
     } finally {
         saving.value = false
     }

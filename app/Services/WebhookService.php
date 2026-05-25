@@ -134,7 +134,7 @@ class WebhookService
     {
         $body = json_encode(['event' => 'ping', 'ts' => now()->toIso8601String()]);
         $signature = $webhook->sign($body);
-
+        
         try {
             $response = Http::withHeaders([
                 'Content-Type' => 'application/json',
@@ -143,7 +143,7 @@ class WebhookService
             ])
                 ->timeout(10)
                 ->post($webhook->url, json_decode($body, true));
-
+                
             return [
                 'success' => $response->successful(),
                 'http_status' => $response->status(),

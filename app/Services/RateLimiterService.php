@@ -29,18 +29,14 @@ class RateLimiterService
     public function getRate(WhatsappInstance $instance): int
     {
         // Check instance-specific override
-        $instanceLimit = DB::table('message_limits')
-            ->where('instance_id', $instance->id)
+        $instanceLimit = MessageLimit::forInstance($instance->id)
             ->value('max_per_minute');
 
         if ($instanceLimit)
             return (int) $instanceLimit;
 
         // Check owner-level override
-        $ownerLimit = DB::table('message_limits')
-            ->where('owner_id', $instance->owner_id)
-            ->where('owner_type', $instance->owner_type)
-            ->whereNull('instance_id')
+        $ownerLimit = MessageLimit::forOwner($instance->owner_id, $instance->owner_type)
             ->value('max_per_minute');
 
         if ($ownerLimit)

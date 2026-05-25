@@ -237,7 +237,6 @@ class InstanceController extends Controller
                 'message' => 'Logout failed. Baileys server unreachable or error occurred.',
             ], 500);
         }
-
         return response()->json([
             'success' => true,
             'message' => 'Logout initiated. Session will clear shortly.',

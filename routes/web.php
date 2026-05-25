@@ -2,6 +2,9 @@
 
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CreditController as AdminCreditController;
+use App\Http\Controllers\Admin\PackageController;
+use App\Http\Controllers\Admin\RevenueController;
+use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Client\UserController;
 use App\Http\Controllers\DashboardController;
@@ -13,6 +16,8 @@ use App\Http\Controllers\Web\MessageController;
 use App\Http\Controllers\Web\ReportController;
 use App\Http\Controllers\Web\TokenController;
 use App\Http\Controllers\Web\WebhookController;
+use App\Http\Controllers\Web\BillingController;
+use App\Http\Controllers\Web\RateLimitController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -79,7 +84,7 @@ Route::middleware(['auth', 'active'])
         Route::get('/instances', [DashboardController::class, 'userInstances'])->name('instances');
         Route::get('/tokens', [DashboardController::class, 'userTokens'])->name('tokens');
         Route::get('/send', [MessageController::class, 'sendPage'])->name('send');
-        Route::get('/inbox', [MessageController::class, 'inboxPage'])->name('inbox');
+        // Route::get('/inbox', [MessageController::class, 'inboxPage'])->name('inbox');
         Route::get('/contacts', [ContactController::class, 'page'])->name('contacts');
         Route::get('/campaigns', [CampaignController::class, 'page'])->name('campaigns');
         Route::get('/reports', [ReportController::class, 'page'])->name('reports');
@@ -90,7 +95,7 @@ Route::middleware(['auth', 'active'])
         Route::prefix('messages')->name('messages.')->group(function () {
             Route::post('/', [MessageController::class, 'send'])->name('send');    // Quick send
             Route::get('/', [MessageController::class, 'index'])->name('index');  // Message log
-            Route::get('/inbox', [MessageController::class, 'inbox'])->name('inbox');  // Inbound only
+            // Route::get('/inbox', [MessageController::class, 'inbox'])->name('inbox');  // Inbound only
             Route::get('/stats', [MessageController::class, 'stats'])->name('stats');  // Stats widget
         });
 
@@ -192,7 +197,6 @@ Route::middleware(['auth', 'active', 'role:client_admin,super_admin'])
         Route::get('/instances', [DashboardController::class, 'clientInstances'])->name('instances');
         Route::get('/users', [UserController::class, 'index'])->name('users');
         Route::get('/credits', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'credits']))->name('credits');
-        Route::get('/rate-limits', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'rate-limits']))->name('rate-limits');
         Route::get('/reports', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'reports']))->name('reports');
         Route::get('/templates', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'templates']))->name('templates');
         Route::get('/settings', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'settings']))->name('settings');
@@ -221,6 +225,19 @@ Route::middleware(['auth', 'active', 'role:client_admin,super_admin'])
 
         // ── Client credit ledger ──────────────────────────────────────────────
         Route::get('/credits/ledger', [CreditController::class, 'clientLedger'])->name('credits.ledger');
+
+        Route::get('/billing', [BillingController::class, 'page'])->name('billing');
+        Route::post('/billing/initiate', [BillingController::class, 'initiate'])->name('billing.initiate');
+        Route::post('/billing/verify/razorpay', [BillingController::class, 'verifyRazorpay'])->name('billing.verify.razorpay');
+        Route::get('/billing/orders', [BillingController::class, 'orders'])->name('billing.orders');
+
+        // ── Client Admin: Rate Limits (replace PlaceholderPage stub for /client/rate-limits) ─
+        Route::get('/rate-limits', [RateLimitController::class, 'page'])->name('rate-limits');
+        Route::put('/rate-limits/client', [RateLimitController::class, 'setClientRate'])->name('rate-limits.client');
+        Route::put('/rate-limits/user/{userId}', [RateLimitController::class, 'setUserRate'])->name('rate-limits.user');
+        Route::delete('/rate-limits/user/{userId}', [RateLimitController::class, 'resetUserRate'])->name('rate-limits.user.reset');
+        Route::put('/rate-limits/instance/{id}', [RateLimitController::class, 'setInstanceRate'])->name('rate-limits.instance');
+        Route::delete('/rate-limits/instance/{id}', [RateLimitController::class, 'resetInstanceRate'])->name('rate-limits.instance.reset');
     });
 
 // ═════════════════════════════════════════════════════════════════════════════
@@ -236,11 +253,10 @@ Route::middleware(['auth', 'active', 'role:super_admin'])
     
         Route::get('/', [DashboardController::class, 'superDashboard'])->name('dashboard');
         Route::get('/clients', [ClientController::class, 'index'])->name('clients');
-        Route::get('/packages', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'packages']))->name('packages');
-        Route::get('/settings', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'settings']))->name('settings');
+        Route::get('/settings', [SettingsController::class, 'page'])->name('settings');
         Route::get('/monitor', fn() => Inertia::render('Admin/Monitor'))->name('monitor');
-        Route::get('/audit', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'audit']))->name('audit');
-        Route::get('/revenue', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'revenue']))->name('revenue');
+
+
 
         // ── Client management JSON actions ────────────────────────────────────
     
@@ -252,9 +268,6 @@ Route::middleware(['auth', 'active', 'role:super_admin'])
     
         Route::post('/credits/adjust', [AdminCreditController::class, 'adjust'])->name('credits.adjust');
         Route::get('/credits/ledger', [AdminCreditController::class, 'ledger'])->name('credits.ledger');
-        Route::get('/credits/packages', [AdminCreditController::class, 'packagesIndex'])->name('packages.index');
-        Route::post('/credits/packages', [AdminCreditController::class, 'packagesStore'])->name('packages.store');
-        Route::patch('/credits/packages/{id}', [AdminCreditController::class, 'packagesUpdate'])->name('packages.update');
 
         // ── Super admin can also manage any instance ──────────────────────────
     
@@ -267,6 +280,27 @@ Route::middleware(['auth', 'active', 'role:super_admin'])
             Route::get('/{id}/live-status', [InstanceController::class, 'liveStatus'])->name('live-status');
         });
 
+        Route::prefix('settings')->name('settings.')->group(function () {
+            Route::get('/system-health', [SettingsController::class, 'systemHealth'])->name('system-health');
+            Route::patch('/', [SettingsController::class, 'update'])->name('update');
+            Route::post('/test-email', [SettingsController::class, 'testEmail'])->name('test-email');
+            Route::post('/cache/clear', [SettingsController::class, 'clearCache'])->name('cache.clear');
+            Route::post('/cache/rebuild', [SettingsController::class, 'rebuildCache'])->name('cache.rebuild');
+        });
+
         // ── Baileys health (super admin monitor page) ─────────────────────────
         Route::get('/baileys-health', [InstanceController::class, 'baileysHealth'])->name('baileys-health');
+
+        Route::get('/packages', [PackageController::class, 'index'])->name('packages');
+        Route::post('/packages', [PackageController::class, 'store'])->name('packages.store');
+        Route::patch('/packages/{id}', [PackageController::class, 'update'])->name('packages.update');
+        Route::delete('/packages/{id}', [PackageController::class, 'destroy'])->name('packages.destroy');
+
+        Route::get('/revenue', [RevenueController::class, 'page'])->name('revenue');
+        Route::get('/revenue/overview', [RevenueController::class, 'overview'])->name('revenue.overview');
+        Route::get('/revenue/by-client', [RevenueController::class, 'byClient'])->name('revenue.by-client');
+        Route::get('/revenue/orders', [RevenueController::class, 'orders'])->name('revenue.orders');
+
+        Route::get('/audit', fn() => Inertia::render('Admin/AuditLog'))->name('audit');
+        Route::get('/audit/logs', [RevenueController::class, 'auditLog'])->name('audit.logs');
     });

@@ -173,7 +173,7 @@ class InternalController extends Controller
     private function onLoggedOut(WhatsappInstance $instance): void
     {
         // Calculate remaining credits
-        $remaining = $instance->credits_assigned - $instance->credits_consumed;
+        $remaining = $instance->credits_assigned;
 
         if ($remaining <= 0) {
             // ❌ No credits left → suspend
@@ -222,7 +222,7 @@ class InternalController extends Controller
             // Deliver to registered webhooks
             $this->webhookService->deliver($instance, 'message.inbound', [
                 'instance_token' => $instance->instance_token,
-                'from' => $payload['from_jid'],
+                'from' => $this->extractPhone($payload),
                 'type' => $payload['type'] ?? 'text',
                 'body' => $payload['body'],
                 'wa_message_id' => $payload['wa_message_id'],
@@ -246,4 +246,37 @@ class InternalController extends Controller
             Log::error("Failed to apply ACK for instance {$instance->id}: {$e->getMessage()}");
         }
     }
+
+    private function extractPhone(array $payload): ?string
+    {
+        $meta = $payload['raw']['key'] ?? [];
+
+        // Priority order
+        $jid = $meta['senderPn']
+            ?? $meta['participantPn']
+            ?? $meta['remoteJid']
+            ?? $payload['from_jid'] ?? null;
+
+        if (!$jid) {
+            return null;
+        }
+
+        // Strip suffixes
+        $digits = str_replace(
+            ['@s.whatsapp.net', '@lid', '@g.us'],
+            '',
+            $jid
+        );
+
+        // Normalize: 12‑digit starting with 91 (India) or plain 10‑digit
+        if (preg_match('/^91\d{10}$/', $digits)) {
+            return $digits;
+        }
+        if (preg_match('/^\d{10}$/', $digits)) {
+            return $digits;
+        }
+
+        return $digits; // fallback
+    }
+
 }

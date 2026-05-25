@@ -54,32 +54,38 @@
         <!-- Credit stats -->
         <div class="grid grid-cols-3 gap-2 mb-4 text-center">
             <div class="bg-gray-50 rounded-lg py-2">
-                <p class="text-base font-bold text-gray-900">{{ instance.credits_assigned }}</p>
-                <p class="text-xs text-gray-400">Assigned</p>
-            </div>
-            <div class="bg-gray-50 rounded-lg py-2">
-                <p class="text-base font-bold"
-                    :class="instance.credits_remaining > 0 ? 'text-green-600' : 'text-red-500'">
-                    {{ instance.credits_remaining }}
+                <p class="text-base text-sm font-bold text-gray-900">
+                    {{ instance.activated_at ? dayjs(instance.activated_at).format('DD MMM YYYY') : '—' }}
                 </p>
-                <p class="text-xs text-gray-400">Remaining</p>
+                <p class="text-xs text-gray-400">Activated On</p>
             </div>
             <div class="bg-gray-50 rounded-lg py-2">
-                <p class="text-base font-bold" :class="expiryClass">
+                <p class="text-base text-sm font-bold text-gray-900">
+                    {{ instance.expires_at ? dayjs(instance.expires_at).format('DD MMM YYYY') : '—' }}
+                </p>
+                <p class="text-xs text-gray-400">Expires On</p>
+            </div>
+            <div class="bg-gray-50 rounded-lg py-2">
+                <p class="text-base text-sm font-bold" :class="expiryClass">
                     {{ instance.days_until_expiry ?? '—' }}
                 </p>
-                <p class="text-xs text-gray-400">Days left</p>
+                <p class="text-xs text-gray-400">Days Left</p>
             </div>
         </div>
+
 
         <!-- Actions -->
         <div class="flex gap-2 pt-3 border-t border-gray-100">
             <!-- Connect -->
-            <button v-if="canConnect" class="btn-primary btn-sm flex-1" @click="$emit('connect', instance)"
-                :disabled="instance.status === 'suspended' || instance.status === 'expired'">
+            <button v-if="canConnect" class="btn-primary btn-sm flex-1" @click="$emit('connect', instance)" :disabled="instance.status === 'suspended'
+                || instance.status === 'expired'
+                || instance.credits_assigned === 0">
                 <QrCodeIcon class="w-3.5 h-3.5" />
-                {{ instance.status === 'suspended' ? 'Top Up First' : 'Connect' }}
+                {{ (instance.status === 'suspended' || instance.credits_assigned === 0)
+                    ? 'Top Up First'
+                    : 'Connect' }}
             </button>
+
 
             <!-- Disconnect -->
             <button v-if="canDisconnect"
@@ -111,6 +117,7 @@ import {
     ClipboardDocumentIcon, ClipboardDocumentCheckIcon,
     QrCodeIcon, ArrowRightOnRectangleIcon, TrashIcon, InformationCircleIcon,
 } from '@heroicons/vue/24/outline'
+import dayjs from 'dayjs'
 
 /**
  * This component is STATELESS regarding live updates.

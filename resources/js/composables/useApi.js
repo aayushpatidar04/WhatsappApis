@@ -127,7 +127,7 @@ export const messageApi = {
 // ── Webhook API (/dashboard/webhooks/*) ──────────────────────────────────────
 
 export const webhookApi = {
-    list: () => webHttp.get('/dashboard/webhooks'),
+    list: () => webHttp.get('/dashboard/webhooks/api'),
     create: (data) => webHttp.post('/dashboard/webhooks', data),
     update: (id, data) => webHttp.patch(`/dashboard/webhooks/${id}`, data),
     delete: (id) => webHttp.delete(`/dashboard/webhooks/${id}`),

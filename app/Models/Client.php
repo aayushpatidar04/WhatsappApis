@@ -27,11 +27,11 @@ class Client extends Model
     protected function casts(): array
     {
         return [
-            'settings'              => 'array',
-            'is_active'             => 'boolean',
-            'credit_balance'        => 'integer',
-            'max_rate_per_minute'   => 'integer',
-            'max_instances_per_user'=> 'integer',
+            'settings' => 'array',
+            'is_active' => 'boolean',
+            'credit_balance' => 'integer',
+            'max_rate_per_minute' => 'integer',
+            'max_instances_per_user' => 'integer',
         ];
     }
 
@@ -47,10 +47,11 @@ class Client extends Model
         return $this->hasMany(User::class);
     }
 
-    public function admins(): HasMany
+    public function admin()
     {
-        return $this->hasMany(User::class)->where('role', 'client_admin');
+        return $this->hasOne(User::class)->where('role', 'client_admin');
     }
+
 
     /**
      * WhatsApp instances directly owned by this client (owner_type = 'client').

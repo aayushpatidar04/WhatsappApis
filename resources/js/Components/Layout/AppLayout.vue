@@ -106,7 +106,7 @@
             </header>
 
             <!-- Page content -->
-            <main class="flex-1 overflow-y-auto p-6">
+            <main class="flex-1 overflow-y-auto p-6 hide-scrollbar">
                 <!-- Flash messages -->
                 <FlashMessage />
                 <slot />
@@ -158,7 +158,7 @@ const userNav = [
     { name: 'Dashboard', href: route('user.dashboard'), icon: HomeIcon },
     { name: 'Instances', href: route('user.instances'), icon: DevicePhoneMobileIcon },
     { name: 'Send Message', href: route('user.send'), icon: PaperAirplaneIcon },
-    { name: 'Inbox', href: route('user.inbox'), icon: InboxIcon },
+    // { name: 'Inbox', href: route('user.inbox'), icon: InboxIcon },
     { section: 'Marketing' },
     { name: 'Campaigns', href: route('user.campaigns'), icon: MegaphoneIcon },
     { name: 'Contacts', href: route('user.contacts'), icon: UserGroupIcon },
@@ -176,6 +176,7 @@ const clientNav = [
     { section: 'Management' },
     { name: 'Users', href: route('client.users'), icon: UsersIcon },
     { name: 'Credits', href: route('client.credits'), icon: CreditCardIcon },
+    { name: 'Billing', href: route('client.billing'), icon: CreditCardIcon },
     { name: 'Rate Limits', href: route('client.rate-limits'), icon: AdjustmentsHorizontalIcon },
     { section: 'Data' },
     { name: 'Reports', href: route('client.reports'), icon: ChartBarIcon },
