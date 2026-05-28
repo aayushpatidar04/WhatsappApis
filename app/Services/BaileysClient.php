@@ -19,6 +19,7 @@ class BaileysClient
 
     public function __construct()
     {
+        // $this->baseUrl = rtrim(config('services.baileys.url', 'http://127.0.0.1:3000'), '/');
         $this->baseUrl = rtrim(config('services.baileys.url', 'https://wa-api.intouchsoftwaresolution.in'), '/');
         $this->secret  = config('services.baileys.secret', '');
         $this->timeout = (int) config('services.baileys.timeout', 10);

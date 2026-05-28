@@ -230,6 +230,8 @@ Route::middleware(['auth', 'active', 'role:client_admin,super_admin'])
         Route::post('/billing/initiate', [BillingController::class, 'initiate'])->name('billing.initiate');
         Route::post('/billing/verify/razorpay', [BillingController::class, 'verifyRazorpay'])->name('billing.verify.razorpay');
         Route::get('/billing/orders', [BillingController::class, 'orders'])->name('billing.orders');
+        Route::post('/billing/stripe/webhook', [BillingController::class, 'stripeWebhook'])->name('billing.stripe.webhook');
+
 
         // ── Client Admin: Rate Limits (replace PlaceholderPage stub for /client/rate-limits) ─
         Route::get('/rate-limits', [RateLimitController::class, 'page'])->name('rate-limits');

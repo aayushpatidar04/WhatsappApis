@@ -175,7 +175,7 @@
               <td class="py-3 px-4 text-gray-700">{{ order.package?.name }}</td>
               <td class="py-3 px-4 font-semibold text-gray-900">{{ order.credits }}</td>
               <td class="py-3 px-4 text-gray-700">
-                {{ order.currency === 'INR' ? '₹' : '$' }}{{ order.amount }}
+                {{ order.currency.toUpperCase() === 'INR' ? '₹' : '$' }}{{ order.amount }}
               </td>
               <td class="py-3 px-4 capitalize text-gray-500 text-xs">{{ order.gateway }}</td>
               <td class="py-3 px-4">
@@ -235,7 +235,7 @@ const startPayment = async () => {
       package_id: selectedPackage.value.id,
       gateway:    selectedGateway.value,
     })
-
+    
     if (selectedGateway.value === 'razorpay') {
       await openRazorpay(data.data)
     } else {
@@ -309,7 +309,7 @@ const openStripe = async (intentData) => {
 
   const stripe  = window.Stripe(intentData.publishable_key)
   const result  = await stripe.confirmCardPayment(intentData.client_secret, {
-    payment_method: { card: { /* Stripe Elements would go here */ } },
+    payment_method: 'pm_card_visa',
   })
 
   if (result.error) {

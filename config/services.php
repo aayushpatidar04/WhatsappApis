@@ -37,6 +37,7 @@ return [
 
     // Baileys Node.js Microservice
     'baileys' => [
+        // 'url'    => env('BAILEYS_SERVICE_URL', 'http://127.0.0.1:3000'),
         'url'    => env('BAILEYS_SERVICE_URL', 'https://wa-api.intouchsoftwaresolution.in'),
         'secret' => env('BAILEYS_INTERNAL_SECRET', 'aayush-patidar'),
         'timeout'=> env('BAILEYS_TIMEOUT', 10),
@@ -75,7 +76,7 @@ return [
     'stripe' => [
         'publishable_key' => env('STRIPE_PUBLISHABLE_KEY', ''),
         'secret_key'      => env('STRIPE_SECRET_KEY', ''),
-        'webhook_secret'  => env('STRIPE_WEBHOOK_SECRET', ''),
+        'webhook_secret'  => env('STRIPE_WEBHOOK_SECRET', 'aayush-patidar'),
     ],
  
     // ── Active payment gateway ────────────────────────────────────────────────

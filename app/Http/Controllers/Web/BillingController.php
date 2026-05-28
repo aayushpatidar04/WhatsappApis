@@ -75,7 +75,7 @@ class BillingController extends Controller
         $package = CreditPackage::active()->findOrFail($request->integer('package_id'));
         $user    = Auth::user();
         $gateway = $request->input('gateway', config('services.payment.default', 'razorpay'));
-
+        
         try {
             $data = match ($gateway) {
                 'stripe'   => $this->paymentService->createStripeIntent($package, $user),

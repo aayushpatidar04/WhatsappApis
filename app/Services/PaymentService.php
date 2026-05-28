@@ -115,6 +115,7 @@ class PaymentService
      */
     public function createStripeIntent(CreditPackage $package, User $user): array
     {
+
         $client = $user->client;
 
         $order = CreditOrder::create([
@@ -130,6 +131,7 @@ class PaymentService
         ]);
 
         $response = Http::withToken(config('services.stripe.secret_key'))
+            ->asForm() // <-- important
             ->post('https://api.stripe.com/v1/payment_intents', [
                 'amount' => (int) ($package->price * 100),
                 'currency' => strtolower($package->currency),
@@ -140,6 +142,7 @@ class PaymentService
                     'package_id' => $package->id,
                 ],
             ]);
+
 
         if (!$response->successful()) {
             $order->update(['status' => CreditOrder::STATUS_FAILED, 'failure_reason' => $response->body()]);
