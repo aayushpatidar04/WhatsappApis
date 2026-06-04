@@ -15,12 +15,13 @@
 
 import { computed } from 'vue'
 const props = defineProps({
-    icon: { type: Object, required: true },
+    icon: { type: [Object, Function], required: true },
     label: { type: String, required: true },
     value: { type: [String, Number], required: true },
     sub: { type: String, default: null },
     color: { type: String, default: 'blue' },
 })
+
 
 const colorClass = computed(() => ({
     blue: 'bg-blue-600',

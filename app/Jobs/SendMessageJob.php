@@ -59,6 +59,7 @@ class SendMessageJob implements ShouldQueue
 
         // Check same-recipient guard first
         $recipientDelay = $rateLimiter->getSameRecipientDelayMs($instance, $this->payload['to'] ?? '');
+        Log::info($recipientDelay);
         if ($recipientDelay > 0) {
             Log::debug("SendMessageJob: same-recipient delay {$recipientDelay}ms for msg {$this->messageId}");
             $this->release((int) ceil($recipientDelay / 1000));

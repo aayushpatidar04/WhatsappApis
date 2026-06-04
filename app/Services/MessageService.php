@@ -46,8 +46,9 @@ class MessageService
         ]);
 
         // Dispatch queue job — rate limiter lives inside the job
+        $queueName = 'instance-' . substr($instance->instance_token, 0, 16);
         SendMessageJob::dispatch($message->id, $instance->instance_token, $payload)
-            ->onQueue($priority);
+            ->onQueue($queueName);
 
         return $message;
     }

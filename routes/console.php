@@ -50,3 +50,5 @@ app(Schedule::class)->command('queue:prune-failed --hours=720')
     ->daily();
 
 app(Schedule::class)->job(new SyncInstanceStatuses)->everyMinute()->withoutOverlapping();
+
+// app(Schedule::class)->command('queue:worker:dynamic')->everyMinute()->withoutOverlapping();

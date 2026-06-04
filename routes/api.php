@@ -1,6 +1,5 @@
 <?php
 
-use App\Ai\Agents\SalesCoach;
 use App\Http\Controllers\Api\GatewayController;
 use App\Http\Controllers\Api\InternalController;
 use App\Http\Controllers\Web\BillingController;
@@ -137,15 +136,4 @@ Broadcast::channel('instance.{token}', function ($user, $token) {
 });
 */
 
-
-Route::post('/coach', function (Request $request) {
-    $response = (new SalesCoach)
-        ->prompt('Analyze this sales transcript...', attachments: [
-            $request->file('transcript'),
-        ], model: 'gemini-2.5-flash');
-
-    return [
-        'analysis' => (string) $response,
-    ];
-});
 

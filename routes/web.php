@@ -6,6 +6,9 @@ use App\Http\Controllers\Admin\PackageController;
 use App\Http\Controllers\Admin\RevenueController;
 use App\Http\Controllers\Admin\SettingsController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Client\ReportsController;
+use App\Http\Controllers\Client\SettingsController as ClientSettingsController;
+use App\Http\Controllers\Client\TemplatesController;
 use App\Http\Controllers\Client\UserController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Web\CampaignController;
@@ -196,10 +199,6 @@ Route::middleware(['auth', 'active', 'role:client_admin,super_admin'])
         Route::get('/', [DashboardController::class, 'clientDashboard'])->name('dashboard');
         Route::get('/instances', [DashboardController::class, 'clientInstances'])->name('instances');
         Route::get('/users', [UserController::class, 'index'])->name('users');
-        Route::get('/credits', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'credits']))->name('credits');
-        Route::get('/reports', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'reports']))->name('reports');
-        Route::get('/templates', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'templates']))->name('templates');
-        Route::get('/settings', fn() => Inertia::render('Shared/PlaceholderPage', ['page' => 'settings']))->name('settings');
 
         // ── User management JSON actions ──────────────────────────────────────
     
@@ -231,6 +230,32 @@ Route::middleware(['auth', 'active', 'role:client_admin,super_admin'])
         Route::post('/billing/verify/razorpay', [BillingController::class, 'verifyRazorpay'])->name('billing.verify.razorpay');
         Route::get('/billing/orders', [BillingController::class, 'orders'])->name('billing.orders');
         Route::post('/billing/stripe/webhook', [BillingController::class, 'stripeWebhook'])->name('billing.stripe.webhook');
+        Route::get('/billing/ledger', [BillingController::class, 'ledger'])->name('billing.ledger');
+
+        // ── Reports ──────────────────────────────────────────────────────────────────
+        Route::get('/reports', [ReportsController::class, 'page'])->name('reports');
+        Route::get('/reports/overview', [ReportsController::class, 'overview'])->name('reports.overview');
+        Route::get('/reports/daily-volume', [ReportsController::class, 'dailyVolume'])->name('reports.daily-volume');
+        Route::get('/reports/by-instance', [ReportsController::class, 'byInstance'])->name('reports.by-instance');
+        Route::get('/reports/type-breakdown', [ReportsController::class, 'typeBreakdown'])->name('reports.type-breakdown');
+        Route::get('/reports/hourly-heatmap', [ReportsController::class, 'hourlyHeatmap'])->name('reports.hourly-heatmap');
+        Route::get('/reports/campaign-stats', [ReportsController::class, 'campaignStats'])->name('reports.campaign-stats');
+        Route::get('/reports/export', [ReportsController::class, 'export'])->name('reports.export');
+
+        // ── Templates ────────────────────────────────────────────────────────────────
+        Route::get('/templates', [TemplatesController::class, 'page'])->name('templates');
+        Route::post('/templates', [TemplatesController::class, 'store'])->name('templates.store');
+        Route::patch('/templates/{id}', [TemplatesController::class, 'update'])->name('templates.update');
+        Route::delete('/templates/{id}', [TemplatesController::class, 'destroy'])->name('templates.destroy');
+        Route::post('/templates/preview', [TemplatesController::class, 'preview'])->name('templates.preview');
+
+        // ── Settings ──────────────────────────────────────────────────────────────────
+        Route::get('/settings', [ClientSettingsController::class, 'page'])->name('settings');
+        Route::patch('/settings/company', [ClientSettingsController::class, 'updateCompany'])->name('settings.company');
+        Route::patch('/settings/profile', [ClientSettingsController::class, 'updateProfile'])->name('settings.profile');
+        Route::post('/settings/change-password', [ClientSettingsController::class, 'changePassword'])->name('settings.password');
+        Route::get('/settings/activity', [ClientSettingsController::class, 'activity'])->name('settings.activity');
+        Route::delete('/settings/sessions', [ClientSettingsController::class, 'signOutOther'])->name('settings.sessions');
 
 
         // ── Client Admin: Rate Limits (replace PlaceholderPage stub for /client/rate-limits) ─

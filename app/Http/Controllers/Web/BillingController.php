@@ -3,22 +3,27 @@
 namespace App\Http\Controllers\Web;
 
 use App\Http\Controllers\Controller;
-use App\Models\AuditLog;
 use App\Models\CreditOrder;
 use App\Models\CreditPackage;
+use App\Models\CreditTransaction;
 use App\Services\PaymentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
 /**
- * BillingController
+ * Client\BillingController
  *
- * Client admins use this to purchase credit packages.
- * Supports Razorpay (primary) and Stripe (secondary).
- * Session auth — no Bearer token.
+ * Unified page for Credits + Billing.
+ * Both /client/credits and /client/billing redirect here.
+ * Shows:
+ * - Current credit balance
+ * - Available packages to purchase
+ * - Purchase history
+ * - Transaction ledger
  */
 class BillingController extends Controller
 {
@@ -26,26 +31,25 @@ class BillingController extends Controller
 
     /**
      * GET /client/billing
-     * Credit packages + order history page.
+     * Main billing/credits page.
      */
     public function page(): Response
     {
-        $user   = Auth::user();
-        $client = $user->client;
-
+        $client   = Auth::user()->client;
         $packages = CreditPackage::active()->orderBy('credits')->get();
 
+        // Recent orders
         $orders = CreditOrder::forClient($client->id)
             ->with('package:id,name')
             ->orderByDesc('created_at')
-            ->limit(20)
+            ->limit(10)
             ->get()
             ->map(fn($o) => [
                 'id'           => $o->id,
                 'order_number' => $o->order_number,
                 'package'      => $o->package?->only('id', 'name'),
                 'credits'      => $o->credits,
-                'amount'       => $o->amount,
+                'amount'       => (float) $o->amount,
                 'currency'     => $o->currency,
                 'gateway'      => $o->gateway,
                 'status'       => $o->status,
@@ -53,17 +57,32 @@ class BillingController extends Controller
                 'created_at'   => $o->created_at->toIso8601String(),
             ]);
 
+        // Transaction ledger
+        $transactions = CreditTransaction::where('client_id', $client->id)
+            ->orderByDesc('created_at')
+            ->limit(20)
+            ->get()
+            ->map(fn($tx) => [
+                'id'          => $tx->id,
+                'type'        => $tx->type,
+                'credits'     => $tx->credits,
+                'reference'   => $tx->reference,
+                'balance_after' => $tx->balance_after,
+                'created_at'  => $tx->created_at->toIso8601String(),
+            ]);
+
         return Inertia::render('Client/Billing', [
-            'packages'       => $packages,
-            'orders'         => $orders,
-            'credit_balance' => $client->credit_balance,
-            'gateway'        => config('services.payment.default', 'razorpay'),
+            'packages'        => $packages,
+            'orders'          => $orders,
+            'transactions'    => $transactions,
+            'credit_balance'  => $client->credit_balance,
+            'gateway'         => config('services.payment.default', 'razorpay'),
         ]);
     }
 
     /**
      * POST /client/billing/initiate
-     * Create a payment gateway order and return checkout details.
+     * Create payment order (Razorpay or Stripe).
      */
     public function initiate(Request $request): JsonResponse
     {
@@ -75,11 +94,11 @@ class BillingController extends Controller
         $package = CreditPackage::active()->findOrFail($request->integer('package_id'));
         $user    = Auth::user();
         $gateway = $request->input('gateway', config('services.payment.default', 'razorpay'));
-        
+
         try {
             $data = match ($gateway) {
-                'stripe'   => $this->paymentService->createStripeIntent($package, $user),
-                default    => $this->paymentService->createRazorpayOrder($package, $user),
+                'stripe' => $this->paymentService->createStripeIntent($package, $user),
+                default  => $this->paymentService->createRazorpayOrder($package, $user),
             };
 
             return response()->json(['success' => true, 'gateway' => $gateway, 'data' => $data]);
@@ -90,7 +109,6 @@ class BillingController extends Controller
 
     /**
      * POST /client/billing/verify/razorpay
-     * Verify Razorpay payment after checkout completes.
      */
     public function verifyRazorpay(Request $request): JsonResponse
     {
@@ -101,7 +119,6 @@ class BillingController extends Controller
             'razorpay_signature'  => ['required', 'string'],
         ]);
 
-        // Ensure the order belongs to this client
         $dbOrder = CreditOrder::where('id', $request->order_id)
             ->where('client_id', Auth::user()->client_id)
             ->firstOrFail();
@@ -116,7 +133,7 @@ class BillingController extends Controller
 
             return response()->json([
                 'success'       => true,
-                'message'       => "{$order->credits} credits added to your wallet!",
+                'message'       => "{$order->credits} credits added to your account!",
                 'order_number'  => $order->order_number,
                 'credits'       => $order->credits,
                 'new_balance'   => $order->client->fresh()->credit_balance,
@@ -128,10 +145,9 @@ class BillingController extends Controller
 
     /**
      * POST /api/stripe/webhook
-     * Stripe sends payment events here. Not session-auth — verified by signature.
-     * Note: This route must be in api.php and excluded from CSRF.
+     * Stripe webhook handler (no auth required, signature-verified).
      */
-    public function stripeWebhook(Request $request): \Illuminate\Http\Response
+    public function stripeWebhook(Request $request)
     {
         try {
             $this->paymentService->handleStripeWebhook(
@@ -146,7 +162,7 @@ class BillingController extends Controller
 
     /**
      * GET /client/billing/orders
-     * JSON order history for async load.
+     * Paginated order history.
      */
     public function orders(Request $request): JsonResponse
     {
@@ -168,5 +184,27 @@ class BillingController extends Controller
             ]);
 
         return response()->json(['success' => true, 'data' => $orders]);
+    }
+
+    /**
+     * GET /client/billing/ledger
+     * Transaction ledger.
+     */
+    public function ledger(Request $request): JsonResponse
+    {
+        $transactions = CreditTransaction::where('client_id', Auth::user()->client_id)
+            ->orderByDesc('created_at')
+            ->paginate($request->integer('per_page', 25))
+            ->through(fn($tx) => [
+                'id'           => $tx->id,
+                'type'         => $tx->type,
+                'credits'      => $tx->credits,
+                'reference'    => $tx->reference,
+                'instance_id'  => $tx->instance_id,
+                'balance_after'=> $tx->balance_after,
+                'created_at'   => $tx->created_at->toIso8601String(),
+            ]);
+
+        return response()->json(['success' => true, 'data' => $transactions]);
     }
 }

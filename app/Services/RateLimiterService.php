@@ -106,16 +106,23 @@ class RateLimiterService
         $key = "rate_same_recipient:{$instance->id}:{$jid}";
         $lastMs = Cache::get($key);
 
+        $nowMs = (int) (microtime(true) * 1000);
+        $minGapMs = 3000; // 3 seconds minimum between same recipient
+
         if (!$lastMs) {
-            Cache::put($key, (int) (microtime(true) * 1000), now()->addSeconds(10));
+            Cache::put($key, $nowMs, now()->addSeconds(10));
+            \Log::debug("RateLimiter: first message to {$jid} on instance {$instance->id}, no delay.");
             return 0;
         }
 
-        $elapsedMs = (int) (microtime(true) * 1000) - $lastMs;
-        $minGapMs = 3000; // 3 seconds minimum between same recipient
+        $elapsedMs = $nowMs - $lastMs;
+        $delay = max(0, $minGapMs - $elapsedMs);
 
-        Cache::put($key, (int) (microtime(true) * 1000), now()->addSeconds(10));
+        Cache::put($key, $nowMs, now()->addSeconds(10));
 
-        return max(0, $minGapMs - $elapsedMs);
+        \Log::debug("RateLimiter: jid={$jid}, elapsed={$elapsedMs}ms, minGap={$minGapMs}ms, delay={$delay}ms");
+
+        return $delay;
     }
+
 }
