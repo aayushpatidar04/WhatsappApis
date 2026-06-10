@@ -148,11 +148,17 @@ class InternalController extends Controller
 
         // Set activated_at and calculate expires_at on first connection
         if ($isFirstConnection) {
-            $updateData['activated_at'] = now();
-            if ($instance->credits_assigned > 0) {
-                $updateData['expires_at'] = now()->addDays($instance->credits_assigned * 30);
+            if (is_null($instance->activated_at)) {
+                $updateData['activated_at'] = now();
+            }
+
+            if (is_null($instance->expires_at) && $instance->credits_assigned > 0) {
+                // Use activated_at as the base instead of now()
+                $updateData['expires_at'] = $updateData['activated_at']->copy()
+                    ->addDays($instance->credits_assigned * 30);
             }
         }
+
 
         $instance->update($updateData);
 
