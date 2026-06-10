@@ -23,7 +23,7 @@ class ContactController extends Controller
     public function index(Request $request): JsonResponse
     {
         $clientId = $this->clientId();
-        $query    = Contact::forClient($clientId)
+        $query = Contact::forClient($clientId)
             ->with('groups:id,name')
             ->orderBy('name');
 
@@ -31,10 +31,14 @@ class ContactController extends Controller
             $s = $request->search;
             $query->where(fn($q) => $q->where('name', 'like', "%{$s}%")->orWhere('phone', 'like', "%{$s}%"));
         }
-        if ($request->filled('tag'))        $query->withTag($request->tag);
-        if ($request->filled('group_id'))   $query->whereHas('groups', fn($q) => $q->where('contact_groups.id', $request->integer('group_id')));
-        if ($request->boolean('blocked'))   $query->where('is_blocked', true);
-        else                                $query->where('is_blocked', false);
+        if ($request->filled('tag'))
+            $query->withTag($request->tag);
+        if ($request->filled('group_id'))
+            $query->whereHas('groups', fn($q) => $q->where('contact_groups.id', $request->integer('group_id')));
+        if ($request->boolean('blocked'))
+            $query->where('is_blocked', true);
+        else
+            $query->where('is_blocked', false);
 
         $contacts = $query->paginate($request->integer('per_page', 25))
             ->through(fn($c) => $this->format($c));
@@ -47,11 +51,11 @@ class ContactController extends Controller
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'          => ['required', 'string', 'max:255'],
-            'phone'         => ['required', 'string', 'max:20'],
-            'email'         => ['sometimes', 'nullable', 'email', 'max:255'],
-            'tags'          => ['sometimes', 'array'],
-            'tags.*'        => ['string', 'max:50'],
+            'name' => ['required', 'string', 'max:255'],
+            'phone' => ['required', 'string', 'max:20'],
+            'email' => ['sometimes', 'nullable', 'email', 'max:255'],
+            'tags' => ['sometimes', 'array'],
+            'tags.*' => ['string', 'max:50'],
             'custom_fields' => ['sometimes', 'array'],
         ]);
 
@@ -69,12 +73,12 @@ class ContactController extends Controller
         }
 
         $contact = Contact::create([
-            'client_id'     => $this->clientId(),
-            'user_id'       => Auth::id(),
-            'name'          => $validated['name'],
-            'phone'         => $phone,
-            'email'         => $validated['email'] ?? null,
-            'tags'          => $validated['tags'] ?? [],
+            'client_id' => $this->clientId(),
+            'user_id' => Auth::id(),
+            'name' => $validated['name'],
+            'phone' => $phone,
+            'email' => $validated['email'] ?? null,
+            'tags' => $validated['tags'] ?? [],
             'custom_fields' => $validated['custom_fields'] ?? [],
         ]);
 
@@ -85,13 +89,13 @@ class ContactController extends Controller
 
     public function update(Request $request, int $id): JsonResponse
     {
-        $contact   = Contact::forClient($this->clientId())->findOrFail($id);
+        $contact = Contact::forClient($this->clientId())->findOrFail($id);
         $validated = $request->validate([
-            'name'          => ['sometimes', 'string', 'max:255'],
-            'email'         => ['sometimes', 'nullable', 'email'],
-            'tags'          => ['sometimes', 'array'],
+            'name' => ['sometimes', 'string', 'max:255'],
+            'email' => ['sometimes', 'nullable', 'email'],
+            'tags' => ['sometimes', 'array'],
             'custom_fields' => ['sometimes', 'array'],
-            'is_blocked'    => ['sometimes', 'boolean'],
+            'is_blocked' => ['sometimes', 'boolean'],
         ]);
 
         $contact->update($validated);
@@ -111,24 +115,24 @@ class ContactController extends Controller
     public function import(Request $request): JsonResponse
     {
         $request->validate([
-            'file'      => ['required', 'file', 'mimes:csv,txt', 'max:5120'],  // 5MB
-            'group_id'  => ['sometimes', 'nullable', 'integer', 'exists:contact_groups,id'],
+            'file' => ['required', 'file', 'mimes:csv,txt', 'max:5120'],  // 5MB
+            'group_id' => ['sometimes', 'nullable', 'integer', 'exists:contact_groups,id'],
         ]);
 
-        $file     = $request->file('file');
+        $file = $request->file('file');
         $clientId = $this->clientId();
-        $groupId  = $request->integer('group_id') ?: null;
+        $groupId = $request->integer('group_id') ?: null;
 
-        $handle   = fopen($file->getRealPath(), 'r');
-        $headers  = array_map('trim', fgetcsv($handle));  // first row = headers
+        $handle = fopen($file->getRealPath(), 'r');
+        $headers = array_map('trim', fgetcsv($handle));  // first row = headers
 
         $imported = 0;
-        $skipped  = 0;
-        $errors   = [];
-        $row      = 1;
+        $skipped = 0;
+        $errors = [];
+        $row = 1;
 
         // Map common header variations
-        $nameCol  = $this->findCol($headers, ['name', 'full_name', 'contact_name']);
+        $nameCol = $this->findCol($headers, ['name', 'full_name', 'contact_name']);
         $phoneCol = $this->findCol($headers, ['phone', 'mobile', 'number', 'phone_number']);
 
         if ($phoneCol === null) {
@@ -138,13 +142,20 @@ class ContactController extends Controller
 
         while (($data = fgetcsv($handle)) !== false) {
             $row++;
-            if (count($data) < count($headers)) { $skipped++; continue; }
+            if (count($data) < count($headers)) {
+                $skipped++;
+                continue;
+            }
 
-            $map  = array_combine($headers, $data);
+            $map = array_combine($headers, $data);
             $phone = Contact::normalisePhone($map[$headers[$phoneCol]] ?? '');
-            $name  = $nameCol !== null ? trim($map[$headers[$nameCol]] ?? '') : $phone;
+            $name = $nameCol !== null ? trim($map[$headers[$nameCol]] ?? '') : $phone;
 
-            if (strlen($phone) < 7) { $errors[] = "Row {$row}: invalid phone"; $skipped++; continue; }
+            if (strlen($phone) < 7) {
+                $errors[] = "Row {$row}: invalid phone";
+                $skipped++;
+                continue;
+            }
 
             try {
                 $contact = Contact::updateOrCreate(
@@ -166,10 +177,10 @@ class ContactController extends Controller
         fclose($handle);
 
         return response()->json([
-            'success'  => true,
+            'success' => true,
             'imported' => $imported,
-            'skipped'  => $skipped,
-            'errors'   => array_slice($errors, 0, 10),
+            'skipped' => $skipped,
+            'errors' => array_slice($errors, 0, 10),
         ]);
     }
 
@@ -192,7 +203,7 @@ class ContactController extends Controller
 
     public function groups(): JsonResponse
     {
-        $groups = ContactGroup::forClient($this->clientId())
+        $groups = ContactGroup::forClient($this->clientId())->with('contacts')
             ->withCount('contacts')
             ->orderBy('name')
             ->get(['id', 'name', 'description', 'created_at']);
@@ -203,7 +214,7 @@ class ContactController extends Controller
     public function storeGroup(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'name'        => ['required', 'string', 'max:255'],
+            'name' => ['required', 'string', 'max:255'],
             'description' => ['sometimes', 'string', 'max:500'],
         ]);
 
@@ -219,6 +230,30 @@ class ContactController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function removeFromGroup(int $groupId, int $contactId): JsonResponse
+    {
+        $group = ContactGroup::forClient($this->clientId())->findOrFail($groupId);
+
+        // Detach the contact from the group
+        $group->contacts()->detach($contactId);
+
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteGroup(int $groupId): JsonResponse
+    {
+        $group = ContactGroup::forClient($this->clientId())->findOrFail($groupId);
+
+        // Detach all contacts from this group (clears contact_group_members)
+        $group->contacts()->detach();
+
+        // Delete the group itself
+        $group->delete();
+
+        return response()->json(['success' => true]);
+    }
+
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private function clientId(): int
@@ -230,23 +265,24 @@ class ContactController extends Controller
     private function format(Contact $c): array
     {
         return [
-            'id'            => $c->id,
-            'name'          => $c->name,
-            'phone'         => $c->phone,
-            'email'         => $c->email,
-            'tags'          => $c->tags ?? [],
+            'id' => $c->id,
+            'name' => $c->name,
+            'phone' => $c->phone,
+            'email' => $c->email,
+            'tags' => $c->tags ?? [],
             'custom_fields' => $c->custom_fields ?? [],
-            'is_whatsapp'   => $c->is_whatsapp,
-            'is_blocked'    => $c->is_blocked,
-            'groups'        => $c->relationLoaded('groups') ? $c->groups->map->only('id', 'name') : [],
-            'created_at'    => $c->created_at->toIso8601String(),
+            'is_whatsapp' => $c->is_whatsapp,
+            'is_blocked' => $c->is_blocked,
+            'groups' => $c->relationLoaded('groups') ? $c->groups->map->only('id', 'name') : [],
+            'created_at' => $c->created_at->toIso8601String(),
         ];
     }
 
     private function findCol(array $headers, array $candidates): ?int
     {
         foreach ($headers as $i => $h) {
-            if (in_array(strtolower(trim($h)), $candidates)) return $i;
+            if (in_array(strtolower(trim($h)), $candidates))
+                return $i;
         }
         return null;
     }

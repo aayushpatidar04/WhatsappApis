@@ -179,7 +179,7 @@ class ReportController extends Controller
             ->groupBy('hour')
             ->get()
             ->keyBy('hour');
-
+        
         $result = [];
         for ($h = 0; $h < 24; $h++) {
             $key = str_pad($h, 2, '0', STR_PAD_LEFT);

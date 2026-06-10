@@ -4,16 +4,18 @@ namespace App\Services;
 
 use App\Events\InstanceEvent as InstanceEventBroadcast;
 use App\Jobs\SendMessageJob;
+use App\Models\CampaignRecipient;
 use App\Models\Message;
 use App\Models\User;
 use App\Models\WhatsappInstance;
 use App\Services\BaileysClient;
+use App\Services\CampaignService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class MessageService
 {
-    public function __construct(private readonly BaileysClient $baileys)
+    public function __construct(private readonly BaileysClient $baileys, private readonly CampaignService $campaignService)
     {
     }
 
@@ -139,6 +141,23 @@ class MessageService
             $update['read_at'] = now();
 
         $message->update($update);
+
+        if ($message->campaign_id) {
+            $recipient = CampaignRecipient::where('campaign_id', $message->campaign_id)
+                ->where('message_id', $message->id)
+                ->first();
+
+            if ($recipient) {
+                switch ($status) {
+                    case Message::STATUS_DELIVERED:
+                        $this->campaignService->markRecipientDelivered($recipient, $message);
+                        break;
+                    case Message::STATUS_READ:
+                        $this->campaignService->markRecipientRead($recipient, $message);
+                        break;
+                }
+            }
+        }
 
         // Broadcast ACK to dashboard so status icons update live
         broadcast(new InstanceEventBroadcast($instanceToken, 'message.ack', [

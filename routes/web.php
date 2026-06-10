@@ -123,6 +123,8 @@ Route::middleware(['auth', 'active'])
             Route::get('/groups', [ContactController::class, 'groups'])->name('groups');
             Route::post('/groups', [ContactController::class, 'storeGroup'])->name('groups.store');
             Route::post('/groups/{id}/add', [ContactController::class, 'addToGroup'])->name('groups.add');
+            Route::post('/groups/{id}/remove/{contactId}', [ContactController::class, 'removeFromGroup'])->name('groups.remove');
+            Route::delete('/groups/{id}/destroy', [ContactController::class, 'deleteGroup'])->name('groups.destroy');
         });
 
         // ── Campaign JSON actions ─────────────────────────────────────────────────────

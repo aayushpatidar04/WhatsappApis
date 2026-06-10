@@ -219,6 +219,33 @@ class CampaignService
         });
     }
 
+    public function markRecipientDelivered(CampaignRecipient $recipient, Message $message): void
+    {
+        DB::transaction(function () use ($recipient, $message) {
+            $recipient->update([
+                'status' => 'delivered',
+                'message_id' => $message->id,
+                'sent_at' => $recipient->sent_at ?? now(), // keep original sent_at if set
+            ]);
+            Campaign::where('id', $recipient->campaign_id)->increment('delivered_count');
+            $this->checkCompletion($recipient->campaign_id);
+        });
+    }
+
+    public function markRecipientRead(CampaignRecipient $recipient, Message $message): void
+    {
+        DB::transaction(function () use ($recipient, $message) {
+            $recipient->update([
+                'status' => 'read',
+                'message_id' => $message->id,
+                'sent_at' => $recipient->sent_at ?? now(),
+            ]);
+            Campaign::where('id', $recipient->campaign_id)->increment('read_count');
+            $this->checkCompletion($recipient->campaign_id);
+        });
+    }
+
+
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private function checkCompletion(int $campaignId): void
@@ -273,4 +300,6 @@ class CampaignService
 
         return $payload;
     }
+
+
 }

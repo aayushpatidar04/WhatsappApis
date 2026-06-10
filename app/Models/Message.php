@@ -54,10 +54,11 @@ class Message extends Model
     // Baileys ACK numeric → our status
     const ACK_MAP = [
         0 => self::STATUS_QUEUED,
-        1 => self::STATUS_SENT,       // server ack
-        2 => self::STATUS_DELIVERED,  // device ack
-        3 => self::STATUS_READ,       // read ack
-        4 => self::STATUS_READ,       // played (audio)
+        1 => self::STATUS_SENDING,       // server ack
+        2 => self::STATUS_SENT,       // server ack
+        3 => self::STATUS_DELIVERED,  // device ack
+        4 => self::STATUS_READ,       // read ack
+        5 => self::STATUS_READ,       // played (audio)
     ];
 
     public function instance(): BelongsTo

@@ -265,19 +265,62 @@
                             <div v-if="!groups.length" class="text-center py-6 text-gray-400 text-sm">No groups yet.
                             </div>
                             <div v-else class="divide-y divide-gray-100">
-                                <div v-for="g in groups" :key="g.id" class="flex items-center justify-between py-3">
-                                    <div>
-                                        <p class="text-sm font-medium text-gray-900">{{ g.name }}</p>
-                                        <p class="text-xs text-gray-400">{{ g.contacts_count }} contacts</p>
+                                <div v-for="g in groups" :key="g.id"
+                                    class="flex flex-col p-4 hover:bg-gray-50 rounded-lg transition">
+                                    <!-- Group header -->
+                                    <div class="flex items-center justify-between cursor-pointer"
+                                        @click="toggleGroup(g.id)">
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-900">{{ g.name }}</p>
+                                            <p class="text-xs text-gray-500">{{ g.contacts_count }} contacts</p>
+                                        </div>
+                                        <div class="flex gap-2 items-center">
+                                            <!-- Accordion arrow -->
+                                            <svg :class="{ 'rotate-90': expandedGroupId === g.id }"
+                                                class="w-4 h-4 text-gray-400 transition-transform" fill="none"
+                                                stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M9 5l7 7-7 7" />
+                                            </svg>
+                                            <!-- Delete group -->
+                                            <button @click.stop="confirmDeleteGroup(g.id)"
+                                                class="px-2 py-1 text-xs text-red-600 border border-red-300 rounded hover:bg-red-50">
+                                                Delete
+                                            </button>
+                                        </div>
                                     </div>
-                                    <span class="text-xs text-gray-400">{{ g.id }}</span>
+
+                                    <!-- Members list (accordion content) -->
+                                    <Transition name="fade">
+                                        <div v-if="expandedGroupId === g.id && g.contacts && g.contacts.length"
+                                            class="mt-3 space-y-2 pl-3 border-l border-gray-200">
+                                            <div v-for="c in g.contacts" :key="c.id"
+                                                class="flex items-center justify-between text-xs bg-gray-50 px-2 py-1 rounded">
+                                                <span class="text-gray-700">{{ c.name }} ({{ c.phone }})</span>
+                                                <button @click="confirmRemoveFromGroup(g.id, c.id)"
+                                                    class="px-2 py-0.5 text-red-500 hover:text-red-700 hover:bg-red-100 rounded">
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </Transition>
                                 </div>
                             </div>
+
+
                         </div>
                     </div>
                 </div>
             </Transition>
         </Teleport>
+
+        <ConfirmationModal v-if="confirmDeleteGroupId" title="Delete Group"
+            message="Do you really want to delete this group? All members will be removed."
+            @close="handleDeleteConfirm" />
+
+        <ConfirmationModal v-if="confirmRemove.groupId" title="Remove Contact"
+            message="Do you really want to remove this contact from the group?" @close="handleRemoveConfirm" />
+
 
     </AppLayout>
 </template>
@@ -287,6 +330,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import AppLayout from '@/Components/Layout/AppLayout.vue'
 import { PlusIcon, ArrowUpTrayIcon, UserGroupIcon, PencilIcon, TrashIcon, XMarkIcon } from '@heroicons/vue/24/outline'
 import { contactApi } from '@/composables/useApi'
+import ConfirmationModal from '@/Components/UI/ConfirmationModal.vue'
 
 const contacts = ref([])
 const tags = ref([])
@@ -306,6 +350,9 @@ const bulkGroupId = ref('')
 const newGroupName = ref('')
 const pagination = ref({})
 const page = ref(1)
+const confirmDeleteGroupId = ref(null)
+const expandedGroupId = ref(null)
+const confirmRemove = ref({ groupId: null, contactId: null })
 
 const filter = reactive({ search: '', tag: '', group_id: '' })
 const form = reactive({ name: '', phone: '', email: '', tags: [] })
@@ -420,6 +467,41 @@ const createGroup = async () => {
     groups.value.push({ ...data.data, contacts_count: 0 })
     newGroupName.value = ''
 }
+
+const toggleGroup = (groupId) => {
+    expandedGroupId.value = expandedGroupId.value === groupId ? null : groupId
+}
+
+const confirmDeleteGroup = (groupId) => {
+    confirmDeleteGroupId.value = groupId
+}
+
+const confirmRemoveFromGroup = (groupId, contactId) => {
+    confirmRemove.value = { groupId, contactId }
+}
+
+const handleDeleteConfirm = async (confirmed) => {
+    if (confirmed && confirmDeleteGroupId.value) {
+        await contactApi.deleteGroup(confirmDeleteGroupId.value)
+        groups.value = groups.value.filter(g => g.id !== confirmDeleteGroupId.value)
+    }
+    confirmDeleteGroupId.value = null
+}
+
+const handleRemoveConfirm = async (confirmed) => {
+    if (confirmed && confirmRemove.value.groupId && confirmRemove.value.contactId) {
+        await contactApi.removeFromGroup(confirmRemove.value.groupId, confirmRemove.value.contactId)
+        const group = groups.value.find(g => g.id === confirmRemove.value.groupId)
+        if (group) {
+            group.contacts = group.contacts.filter(c => c.id !== confirmRemove.value.contactId)
+            group.contacts_count--
+        }
+    }
+    confirmRemove.value = { groupId: null, contactId: null }
+}
+
+
+
 </script>
 
 <style scoped>

@@ -33,7 +33,7 @@ class AppServiceProvider extends ServiceProvider
             return new InstanceService($app->make(CreditService::class));
         });
         $this->app->singleton(MessageService::class, function ($app) {
-            return new MessageService($app->make(BaileysClient::class));
+            return new MessageService($app->make(BaileysClient::class), $app->make(CampaignService::class));
         });
     }
 

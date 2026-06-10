@@ -96,8 +96,7 @@
                         <span class="flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full" /><span>{{
                             camp.delivered_count }} delivered</span></span>
                         <span class="flex items-center gap-1"><span class="w-2 h-2 bg-blue-400 rounded-full" /><span>{{
-                            camp.sent_count
-                            - camp.delivered_count }} sent</span></span>
+                            camp.sent_count }} sent</span></span>
                         <span class="flex items-center gap-1"><span class="w-2 h-2 bg-red-400 rounded-full" /><span>{{
                             camp.failed_count
                         }} failed</span></span>

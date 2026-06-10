@@ -136,44 +136,46 @@ export const webhookApi = {
 }
 
 // ── Contact API (/dashboard/contacts/*) ──────────────────────────────────────
- 
+
 export const contactApi = {
-    list:       (params = {})      => webHttp.get('/dashboard/contacts/api', { params }),
-    create:     (data)             => webHttp.post('/dashboard/contacts', data),
-    update:     (id, data)         => webHttp.patch(`/dashboard/contacts/${id}`, data),
-    delete:     (id)               => webHttp.delete(`/dashboard/contacts/${id}`),
-    import:     (formData)         => webHttp.post('/dashboard/contacts/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
-    tags:       ()                 => webHttp.get('/dashboard/contacts/tags'),
-    groups:     ()                 => webHttp.get('/dashboard/contacts/groups'),
-    createGroup:(data)             => webHttp.post('/dashboard/contacts/groups', data),
-    addToGroup: (groupId, ids)     => webHttp.post(`/dashboard/contacts/groups/${groupId}/add`, { contact_ids: ids }),
+    list: (params = {}) => webHttp.get('/dashboard/contacts/api', { params }),
+    create: (data) => webHttp.post('/dashboard/contacts', data),
+    update: (id, data) => webHttp.patch(`/dashboard/contacts/${id}`, data),
+    delete: (id) => webHttp.delete(`/dashboard/contacts/${id}`),
+    import: (formData) => webHttp.post('/dashboard/contacts/import', formData, { headers: { 'Content-Type': 'multipart/form-data' } }),
+    tags: () => webHttp.get('/dashboard/contacts/tags'),
+    groups: () => webHttp.get('/dashboard/contacts/groups'),
+    createGroup: (data) => webHttp.post('/dashboard/contacts/groups', data),
+    addToGroup: (groupId, ids) => webHttp.post(`/dashboard/contacts/groups/${groupId}/add`, { contact_ids: ids }),
+    removeFromGroup: (groupId, contactId) => webHttp.post(`/dashboard/contacts/groups/${groupId}/remove/${contactId}`),
+    deleteGroup: (groupId) => webHttp.delete(`/dashboard/contacts/groups/${groupId}/destroy`)
 }
- 
+
 // ── Campaign API (/dashboard/campaigns/*) ────────────────────────────────────
- 
+
 export const campaignApi = {
-    list:       (params = {})  => webHttp.get('/dashboard/campaigns/api', { params }),
-    create:     (data)         => webHttp.post('/dashboard/campaigns', data),
-    get:        (id)           => webHttp.get(`/dashboard/campaigns/${id}`),
-    update:     (id, data)     => webHttp.patch(`/dashboard/campaigns/${id}`, data),
-    launch:     (id)           => webHttp.post(`/dashboard/campaigns/${id}/launch`),
-    pause:      (id)           => webHttp.post(`/dashboard/campaigns/${id}/pause`),
-    resume:     (id)           => webHttp.post(`/dashboard/campaigns/${id}/resume`),
-    cancel:     (id)           => webHttp.post(`/dashboard/campaigns/${id}/cancel`),
-    recipients: (id, params={})=> webHttp.get(`/dashboard/campaigns/${id}/recipients`, { params }),
-    analytics:  (id)           => webHttp.get(`/dashboard/campaigns/${id}/analytics`),
+    list: (params = {}) => webHttp.get('/dashboard/campaigns/api', { params }),
+    create: (data) => webHttp.post('/dashboard/campaigns', data),
+    get: (id) => webHttp.get(`/dashboard/campaigns/${id}`),
+    update: (id, data) => webHttp.patch(`/dashboard/campaigns/${id}`, data),
+    launch: (id) => webHttp.post(`/dashboard/campaigns/${id}/launch`),
+    pause: (id) => webHttp.post(`/dashboard/campaigns/${id}/pause`),
+    resume: (id) => webHttp.post(`/dashboard/campaigns/${id}/resume`),
+    cancel: (id) => webHttp.post(`/dashboard/campaigns/${id}/cancel`),
+    recipients: (id, params = {}) => webHttp.get(`/dashboard/campaigns/${id}/recipients`, { params }),
+    analytics: (id) => webHttp.get(`/dashboard/campaigns/${id}/analytics`),
 }
- 
+
 // ── Report API (/dashboard/reports/*) ────────────────────────────────────────
- 
+
 export const reportApi = {
-    overview:       (params = {}) => webHttp.get('/dashboard/reports/overview', { params }),
-    dailyVolume:    (params = {}) => webHttp.get('/dashboard/reports/daily-volume', { params }),
-    byInstance:     (params = {}) => webHttp.get('/dashboard/reports/by-instance', { params }),
-    typeBreakdown:  (params = {}) => webHttp.get('/dashboard/reports/type-breakdown', { params }),
-    hourlyHeatmap:  (params = {}) => webHttp.get('/dashboard/reports/hourly-heatmap', { params }),
+    overview: (params = {}) => webHttp.get('/dashboard/reports/overview', { params }),
+    dailyVolume: (params = {}) => webHttp.get('/dashboard/reports/daily-volume', { params }),
+    byInstance: (params = {}) => webHttp.get('/dashboard/reports/by-instance', { params }),
+    typeBreakdown: (params = {}) => webHttp.get('/dashboard/reports/type-breakdown', { params }),
+    hourlyHeatmap: (params = {}) => webHttp.get('/dashboard/reports/hourly-heatmap', { params }),
     campaignFunnel: (params = {}) => webHttp.get('/dashboard/reports/campaign-funnel', { params }),
-    exportUrl:      (days = 30)   => `/dashboard/reports/export?days=${days}`,
+    exportUrl: (days = 30) => `/dashboard/reports/export?days=${days}`,
 }
 
 export default webHttp
