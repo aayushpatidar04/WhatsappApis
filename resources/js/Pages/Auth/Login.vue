@@ -62,13 +62,13 @@
                 </form>
 
                 <!-- Demo credentials hint (remove in production) -->
-                <div class="mt-6 p-4 bg-blue-50 rounded-xl text-xs text-blue-700 space-y-1">
+                <!-- <div class="mt-6 p-4 bg-blue-50 rounded-xl text-xs text-blue-700 space-y-1">
                     <p class="font-semibold">Demo credentials:</p>
                     <p>Super Admin: superadmin@waplatform.com</p>
                     <p>Master Admin: admin@demoagency.com</p>
                     <p>User: user@demoagency.com</p>
                     <p class="text-blue-500">Password: as seeded</p>
-                </div>
+                </div> -->
             </div>
 
             <p class="text-center text-slate-500 text-xs mt-6">
