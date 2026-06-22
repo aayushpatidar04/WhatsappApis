@@ -24,7 +24,7 @@ class WebhookService
         $webhooks = Webhook::activeFor($instance->id, $event)
             ->where(
                 fn($q) => $q
-                    ->where('user_id', $instance->owner_type === 'user' ? $instance->owner_id : 0)
+                    ->where('user_id', $instance->owner_type == 'user' ? $instance->owner_id : 0)
                     ->orWhereHas('user', fn($q2) => $q2->where('client_id', $instance->client_id))
             )
             ->get();

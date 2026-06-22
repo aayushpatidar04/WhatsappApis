@@ -17,7 +17,7 @@ const props = defineProps({
 });
 
 const closeOnEscape = (e) => {
-    if (open.value && e.key === 'Escape') {
+    if (open.value && e.key == 'Escape') {
         open.value = false;
     }
 };
@@ -32,9 +32,9 @@ const widthClass = computed(() => {
 });
 
 const alignmentClasses = computed(() => {
-    if (props.align === 'left') {
+    if (props.align == 'left') {
         return 'ltr:origin-top-left rtl:origin-top-right start-0';
-    } else if (props.align === 'right') {
+    } else if (props.align == 'right') {
         return 'ltr:origin-top-right rtl:origin-top-left end-0';
     } else {
         return 'origin-top';

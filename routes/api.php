@@ -130,8 +130,8 @@ Broadcast::channel('instance.{token}', function ($user, $token) {
     $instance = \App\Models\WhatsappInstance::where('instance_token', $token)->first();
     if (!$instance) return false;
     if ($user->isSuperAdmin()) return true;
-    if ($user->isClientAdmin() && $instance->client_id === $user->client_id) return true;
-    if ($instance->owner_type === 'user' && $instance->owner_id === $user->id) return true;
+    if ($user->isClientAdmin() && $instance->client_id == $user->client_id) return true;
+    if ($instance->owner_type == 'user' && $instance->owner_id == $user->id) return true;
     return false;
 });
 */

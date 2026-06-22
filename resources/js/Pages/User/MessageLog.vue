@@ -88,8 +88,8 @@
                             class="hover:bg-gray-50 cursor-pointer transition-colors" @click="selected = msg">
                             <td class="py-3 px-4">
                                 <span
-                                    :class="msg.direction === 'inbound' ? 'badge bg-green-100 text-green-700' : 'badge bg-blue-100 text-blue-700'">
-                                    {{ msg.direction === 'inbound' ? '↓ In' : '↑ Out' }}
+                                    :class="msg.direction == 'inbound' ? 'badge bg-green-100 text-green-700' : 'badge bg-blue-100 text-blue-700'">
+                                    {{ msg.direction == 'inbound' ? '↓ In' : '↑ Out' }}
                                 </span>
                             </td>
                             <td class="py-3 px-4 font-mono text-gray-700 text-xs">{{ msg.phone }}</td>
@@ -111,7 +111,7 @@
             <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
                 <p class="text-xs text-gray-400">{{ pagination.total ?? 0 }} total messages</p>
                 <div class="flex gap-2">
-                    <button :disabled="page === 1" @click="goTo(page - 1)" class="btn-secondary btn-sm px-3">‹</button>
+                    <button :disabled="page == 1" @click="goTo(page - 1)" class="btn-secondary btn-sm px-3">‹</button>
                     <span class="text-xs text-gray-500 px-2 py-1.5">{{ page }} / {{ pagination.last_page ?? 1 }}</span>
                     <button :disabled="page >= (pagination.last_page ?? 1)" @click="goTo(page + 1)"
                         class="btn-secondary btn-sm px-3">›</button>
@@ -135,7 +135,7 @@
                             <!-- Status + direction -->
                             <div class="flex gap-3">
                                 <span
-                                    :class="selected.direction === 'inbound' ? 'badge bg-green-100 text-green-700' : 'badge bg-blue-100 text-blue-700'">
+                                    :class="selected.direction == 'inbound' ? 'badge bg-green-100 text-green-700' : 'badge bg-blue-100 text-blue-700'">
                                     {{ selected.direction }}
                                 </span>
                                 <span :class="statusBadge(selected.status)">{{ statusLabel(selected.status) }}</span>
@@ -186,7 +186,7 @@
                             </div>
 
                             <!-- Error -->
-                            <div v-if="selected.status === 'failed'"
+                            <div v-if="selected.status == 'failed'"
                                 class="bg-red-50 border border-red-200 rounded-xl p-4 text-sm text-red-700">
                                 <p class="font-semibold mb-1">Failure reason</p>
                                 <p>{{ selected.error_message ?? 'Unknown error' }}</p>
@@ -243,14 +243,14 @@ async function subscribeInstances() {
         if (!ch) continue
 
         ch.listen('InstanceEvent', ({ event, payload }) => {
-            if (event === 'message.ack') {
+            if (event == 'message.ack') {
                 // Update status in-place without refetching
-                const idx = messages.value.findIndex(m => m.id === payload.message_id)
+                const idx = messages.value.findIndex(m => m.id == payload.message_id)
                 if (idx !== -1) messages.value[idx] = { ...messages.value[idx], status: payload.status }
-                if (selected.value?.id === payload.message_id) selected.value.status = payload.status
+                if (selected.value?.id == payload.message_id) selected.value.status = payload.status
             }
-            if (event === 'message.sent') {
-                const idx = messages.value.findIndex(m => m.id === payload.message_id)
+            if (event == 'message.sent') {
+                const idx = messages.value.findIndex(m => m.id == payload.message_id)
                 if (idx !== -1) messages.value[idx] = { ...messages.value[idx], status: 'sent' }
             }
         })

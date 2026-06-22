@@ -182,8 +182,8 @@ class MessageController extends Controller
         $instance = WhatsappInstance::whereNull('deleted_at')->findOrFail($id);
 
         if ($user->isSuperAdmin()) return $instance;
-        if ($user->isClientAdmin() && $instance->client_id === $user->client_id) return $instance;
-        if ($instance->owner_type === 'user' && $instance->owner_id === $user->id) return $instance;
+        if ($user->isClientAdmin() && $instance->client_id == $user->client_id) return $instance;
+        if ($instance->owner_type == 'user' && $instance->owner_id == $user->id) return $instance;
 
         abort(403);
     }

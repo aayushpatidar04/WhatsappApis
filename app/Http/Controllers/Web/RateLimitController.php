@@ -170,7 +170,7 @@ class RateLimitController extends Controller
 
     private function getLimit(string $type, int $id): int
     {
-        if ($type === 'instance') {
+        if ($type == 'instance') {
             return (int) (MessageLimit::forInstance($id)->value('max_per_minute')
                 ?? Auth::user()->client->max_rate_per_minute);
         }

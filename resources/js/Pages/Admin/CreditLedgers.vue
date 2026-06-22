@@ -73,7 +73,7 @@
                 <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
                     <p class="text-xs text-gray-400">{{ transactions.total ?? 0 }} transactions</p>
                     <div class="flex gap-2">
-                        <button :disabled="transactions.current_page === 1" @click="goTo(transactions.current_page - 1)"
+                        <button :disabled="transactions.current_page == 1" @click="goTo(transactions.current_page - 1)"
                             class="btn-secondary btn-sm px-3">‹</button>
                         <span class="text-xs text-gray-500 px-2 py-1.5">
                             {{ transactions.current_page }} / {{ transactions.last_page ?? 1 }}

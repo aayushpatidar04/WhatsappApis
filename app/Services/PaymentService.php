@@ -174,9 +174,9 @@ class PaymentService
         $sig = null;
         foreach ($parts as $part) {
             [$k, $v] = explode('=', $part, 2);
-            if ($k === 't')
+            if ($k == 't')
                 $timestamp = $v;
-            if ($k === 'v1')
+            if ($k == 'v1')
                 $sig = $v;
         }
 
@@ -187,7 +187,7 @@ class PaymentService
 
         $event = json_decode($payload, true);
 
-        if ($event['type'] === 'payment_intent.succeeded') {
+        if ($event['type'] == 'payment_intent.succeeded') {
             $intent = $event['data']['object'];
             $orderId = $intent['metadata']['order_id'] ?? null;
             if (!$orderId)

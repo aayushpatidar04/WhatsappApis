@@ -134,7 +134,7 @@ class InternalController extends Controller
 
     private function onConnected(WhatsappInstance $instance, array $payload): void
     {
-        $isFirstConnection = $instance->status === WhatsappInstance::STATUS_PENDING;
+        $isFirstConnection = $instance->status == WhatsappInstance::STATUS_PENDING;
 
         $updateData = [
             'status' => WhatsappInstance::STATUS_ACTIVE,

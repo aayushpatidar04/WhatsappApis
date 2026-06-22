@@ -34,7 +34,7 @@
           </div>
           <div class="ml-auto text-right">
             <p class="text-2xl font-bold text-blue-600">
-              {{ pkg.currency === 'INR' ? '₹' : '$' }}{{ pkg.price }}
+              {{ pkg.currency == 'INR' ? '₹' : '$' }}{{ pkg.price }}
             </p>
             <p class="text-xs text-gray-400">{{ pkg.currency }}</p>
           </div>
@@ -168,7 +168,7 @@ const savePackage = async () => {
   try {
     if (editingPkg.value) {
       const { data } = await webHttp.patch(`/super/packages/${editingPkg.value.id}`, form)
-      const idx = packages.value.findIndex(p => p.id === editingPkg.value.id)
+      const idx = packages.value.findIndex(p => p.id == editingPkg.value.id)
       if (idx !== -1) packages.value[idx] = data.data
     } else {
       const { data } = await webHttp.post('/super/packages', form)
@@ -176,7 +176,7 @@ const savePackage = async () => {
     }
     closeForm()
   } catch (err) {
-    if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
+    if (err.response?.status == 422) Object.assign(errors, err.response.data.errors ?? {})
     else serverError.value = err.response?.data?.message ?? 'Failed to save.'
   } finally {
     saving.value = false
@@ -185,7 +185,7 @@ const savePackage = async () => {
 
 const toggleActive = async (pkg) => {
   const { data } = await webHttp.patch(`/super/packages/${pkg.id}`, { is_active: !pkg.is_active })
-  const idx = packages.value.findIndex(p => p.id === pkg.id)
+  const idx = packages.value.findIndex(p => p.id == pkg.id)
   if (idx !== -1) packages.value[idx] = data.data
 }
 

@@ -33,7 +33,7 @@
         <div class="flex gap-2 mb-5 flex-wrap">
             <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key"
                 :class="['px-4 py-2 rounded-lg text-sm font-medium transition-colors',
-                    activeTab === tab.key ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50']">
+                    activeTab == tab.key ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50']">
                 {{ tab.label }} <span class="ml-1 opacity-70 text-xs">({{ tab.count }})</span>
             </button>
         </div>
@@ -97,7 +97,7 @@ const tabs = computed(() => [
 const filteredInstances = computed(() => {
     switch (activeTab.value) {
         case 'own': return instances.value.filter(i => i.is_own)
-        case 'active': return instances.value.filter(i => i.status === 'active')
+        case 'active': return instances.value.filter(i => i.status == 'active')
         case 'issues': return instances.value.filter(i => ['disconnected', 'suspended', 'expired'].includes(i.status))
         default: return instances.value
     }

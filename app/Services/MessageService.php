@@ -135,9 +135,9 @@ class MessageService
             return;
 
         $update = ['status' => $status];
-        if ($status === Message::STATUS_DELIVERED)
+        if ($status == Message::STATUS_DELIVERED)
             $update['delivered_at'] = now();
-        if ($status === Message::STATUS_READ)
+        if ($status == Message::STATUS_READ)
             $update['read_at'] = now();
 
         $message->update($update);
@@ -201,7 +201,7 @@ class MessageService
 
     private function resolveOwnerId(WhatsappInstance $instance): int
     {
-        if ($instance->owner_type === 'user')
+        if ($instance->owner_type == 'user')
             return $instance->owner_id;
         // Client-owned instance → use the client admin's user ID
         return \App\Models\User::where('client_id', $instance->client_id)

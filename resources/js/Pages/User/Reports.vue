@@ -59,7 +59,7 @@
                 <div v-else class="h-48 flex items-end gap-px overflow-hidden">
                     <div v-for="(d, index) in dailyVolume" :key="d.date"
                         class="flex-1 h-full flex items-end justify-center gap-[2px] min-w-0 group cursor-default relative"
-                        :class="index % 2 === 0 ? 'bg-gray-100' : 'bg-gray-200'"
+                        :class="index % 2 == 0 ? 'bg-gray-100' : 'bg-gray-200'"
                         :title="`${d.date}: ${d.total} sent, ${d.delivered} delivered, ${d.failed} failed`">
                         <!-- Sent -->
                         <div v-if="visibleBars.sent" class="bg-blue-400 rounded-t-sm w-1.5 md:w-2"
@@ -130,7 +130,7 @@
                     <div v-for="h in hourlyHeatmap" :key="h.hour" class="text-center">
                         <div :class="['rounded h-10 transition-colors', heatColor(h.count)]"
                             :title="`${h.label}: ${h.count} messages`" />
-                        <p class="text-xs text-gray-400 mt-1">{{ h.hour % 6 === 0 ? h.hour : '' }}</p>
+                        <p class="text-xs text-gray-400 mt-1">{{ h.hour % 6 == 0 ? h.hour : '' }}</p>
                     </div>
                 </div>
                 <div class="flex items-center gap-2 mt-3 text-xs text-gray-400">

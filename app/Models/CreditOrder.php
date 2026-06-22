@@ -61,11 +61,11 @@ class CreditOrder extends Model
 
     public function isPaid(): bool
     {
-        return $this->status === self::STATUS_PAID;
+        return $this->status == self::STATUS_PAID;
     }
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status == self::STATUS_PENDING;
     }
 
     public function scopeForClient($q, int $clientId)

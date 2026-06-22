@@ -20,7 +20,7 @@
                 <!-- Live status badge -->
                 <span :class="['badge flex items-center gap-1.5 transition-all duration-300', badgeClass]">
                     <span
-                        :class="['w-1.5 h-1.5 rounded-full', instance.status === 'active' ? 'bg-green-500 animate-pulse' : 'bg-current opacity-60']" />
+                        :class="['w-1.5 h-1.5 rounded-full', instance.status == 'active' ? 'bg-green-500 animate-pulse' : 'bg-current opacity-60']" />
                     {{ statusLabel }}
                 </span>
                 <!-- Client-owned badge -->
@@ -77,11 +77,11 @@
         <!-- Actions -->
         <div class="flex gap-2 pt-3 border-t border-gray-100">
             <!-- Connect -->
-            <button v-if="canConnect" class="btn-primary btn-sm flex-1" @click="$emit('connect', instance)" :disabled="instance.status === 'suspended'
-                || instance.status === 'expired'
-                || instance.credits_assigned === 0">
+            <button v-if="canConnect" class="btn-primary btn-sm flex-1" @click="$emit('connect', instance)" :disabled="instance.status == 'suspended'
+                || instance.status == 'expired'
+                || instance.credits_assigned == 0">
                 <QrCodeIcon class="w-3.5 h-3.5" />
-                {{ (instance.status === 'suspended' || instance.credits_assigned === 0)
+                {{ (instance.status == 'suspended' || instance.credits_assigned == 0)
                     ? 'Top Up First'
                     : 'Connect' }}
             </button>
@@ -133,7 +133,7 @@ const props = defineProps({
 defineEmits(['connect', 'disconnect', 'delete', 'details'])
 
 const page = usePage()
-const isClientAdmin = computed(() => page.props.auth.user.role === 'client_admin')
+const isClientAdmin = computed(() => page.props.auth.user.role == 'client_admin')
 
 const showToken = ref(false)
 const copied = ref(false)

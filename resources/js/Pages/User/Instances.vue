@@ -91,7 +91,7 @@ const openQr = (inst) => { connectingInstance.value = inst }
 const handleDetails = (inst) => { detailsInstance.value = inst }
 
 const onConnected = (payload) => {
-    const inst = instanceList.value.find(i => i.id === connectingInstanceId.value)
+    const inst = instanceList.value.find(i => i.id == connectingInstanceId.value)
 
     if (inst) {
         inst.status = 'active'
@@ -115,7 +115,7 @@ const handleDisconnect = async (inst) => {
             alert(res.data.message ?? 'Failed to disconnect.')
             return
         }
-        const index = instanceList.value.findIndex(i => i.id === inst.id)
+        const index = instanceList.value.findIndex(i => i.id == inst.id)
         if (index !== -1) {
             instanceList.value[index] = {
                 ...instanceList.value[index],

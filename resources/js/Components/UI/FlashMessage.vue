@@ -2,10 +2,10 @@
     <TransitionGroup name="flash" tag="div" class="space-y-2 mb-4">
         <div v-for="flash in flashes" :key="flash.id" :class="[
             'flex items-start gap-3 p-4 rounded-lg text-sm font-medium border',
-            flash.type === 'success' && 'bg-green-50 text-green-800 border-green-200',
-            flash.type === 'error' && 'bg-red-50 text-red-800 border-red-200',
-            flash.type === 'warning' && 'bg-yellow-50 text-yellow-800 border-yellow-200',
-            flash.type === 'info' && 'bg-blue-50 text-blue-800 border-blue-200',
+            flash.type == 'success' && 'bg-green-50 text-green-800 border-green-200',
+            flash.type == 'error' && 'bg-red-50 text-red-800 border-red-200',
+            flash.type == 'warning' && 'bg-yellow-50 text-yellow-800 border-yellow-200',
+            flash.type == 'info' && 'bg-blue-50 text-blue-800 border-blue-200',
         ]">
             <component :is="iconFor(flash.type)" class="w-4 h-4 flex-shrink-0 mt-0.5" />
             <span class="flex-1">{{ flash.message }}</span>

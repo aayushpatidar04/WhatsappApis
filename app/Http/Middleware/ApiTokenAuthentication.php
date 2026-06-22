@@ -85,7 +85,7 @@ class ApiTokenAuthentication
             // (or client_admin can use any instance in their tenant)
             if (
                 !$user->isAdminOrAbove() &&
-                !($instance->owner_type === 'user' && $instance->owner_id === $user->id)
+                !($instance->owner_type == 'user' && $instance->owner_id == $user->id)
             ) {
                 return response()->json([
                     'success' => false,

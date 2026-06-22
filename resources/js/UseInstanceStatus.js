@@ -84,7 +84,7 @@ export function useInstanceStatus(instanceToken) {
   }
 
   // Support both ref and plain string
-  if (typeof instanceToken === 'object' && 'value' in instanceToken) {
+  if (typeof instanceToken == 'object' && 'value' in instanceToken) {
     watch(instanceToken, (newToken) => {
       if (newToken) subscribe(newToken)
       else unsubscribe()

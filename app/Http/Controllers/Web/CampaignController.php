@@ -217,9 +217,9 @@ class CampaignController extends Controller
 
         if ($user->isSuperAdmin())
             return $campaign;
-        if ($user->isClientAdmin() && $campaign->client_id === $user->client_id)
+        if ($user->isClientAdmin() && $campaign->client_id == $user->client_id)
             return $campaign;
-        if ($campaign->user_id === $user->id)
+        if ($campaign->user_id == $user->id)
             return $campaign;
         abort(403);
     }

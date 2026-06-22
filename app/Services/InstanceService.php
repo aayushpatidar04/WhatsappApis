@@ -37,13 +37,13 @@ class InstanceService
             [$ownerType, $clientId] = $this->resolveOwnerMeta($owner);
 
             // Validate max instances per user (not checked for super_admin or client)
-            if ($ownerType === WhatsappInstance::OWNER_TYPE_USER) {
+            if ($ownerType == WhatsappInstance::OWNER_TYPE_USER) {
                 $this->assertInstanceLimit($owner, $clientId);
             }
 
             // Validate credits available if assigning now
             if ($creditsToAssign > 0) {
-                $balance = $ownerType === 'client'
+                $balance = $ownerType == 'client'
                     ? $owner->credit_balance
                     : $owner->credit_balance;
 
@@ -118,7 +118,7 @@ class InstanceService
      */
     public function delete(WhatsappInstance $instance, ?User $actor = null): void
     {
-        if ($instance->status === WhatsappInstance::STATUS_ACTIVE) {
+        if ($instance->status == WhatsappInstance::STATUS_ACTIVE) {
             throw ValidationException::withMessages([
                 'instance' => 'Cannot delete an active instance. Disconnect it first.',
             ]);

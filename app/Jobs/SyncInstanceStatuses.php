@@ -35,7 +35,7 @@ class SyncInstanceStatuses implements ShouldQueue
             if (!$nodeData) {
                 // Scenario A: Node.js has absolutely no record of this instance in memory.
                 // If Laravel thinks it is 'active', it has crashed or logged out while Laravel was offline.
-                if ($instance->status === 'active' || $instance->status === 'disconnected') {
+                if ($instance->status == 'active' || $instance->status == 'disconnected') {
                     $instance->update([
                         'status' => 'pending', 
                         'phone_number' => null // Safety wipe since it's fully logged out
@@ -65,7 +65,7 @@ class SyncInstanceStatuses implements ShouldQueue
                 ]);
                 
                 // Fire the pusher event so the UI updates without requiring a refresh
-                $pusherEvent = $mappedStatus === 'active' ? 'session.connected' : 'session.disconnected';
+                $pusherEvent = $mappedStatus == 'active' ? 'session.connected' : 'session.disconnected';
                 event(new \App\Events\InstanceEvent($instance->instance_token, $pusherEvent, [
                     'phone_number' => $instance->phone_number
                 ]));

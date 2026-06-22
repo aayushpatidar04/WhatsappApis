@@ -136,8 +136,8 @@ const props = defineProps({
 const page = usePage()
 const sidebarOpen = ref(false)
 const user = computed(() => page.props.auth.user)
-const isSuperAdmin = computed(() => user.value.role === 'super_admin')
-const isClientAdmin = computed(() => user.value.role === 'client_admin')
+const isSuperAdmin = computed(() => user.value.role == 'super_admin')
+const isClientAdmin = computed(() => user.value.role == 'client_admin')
 const clientCredits = computed(() => page.props.auth.client?.credit_balance ?? 0)
 const userInitial = computed(() => user.value.name?.charAt(0).toUpperCase() ?? '?')
 
@@ -204,7 +204,7 @@ const navItems = computed(() => {
     return userNav
 })
 
-const isActive = (href) => page.url === new URL(href, window.location.origin).pathname
+const isActive = (href) => page.url == new URL(href, window.location.origin).pathname
 
 const logout = () => router.post(route('logout'))
 </script>

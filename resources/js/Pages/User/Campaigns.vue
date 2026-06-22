@@ -15,7 +15,7 @@
         <div class="flex gap-2 mb-5 flex-wrap">
             <button v-for="tab in statusTabs" :key="tab.value" @click="filter.status = tab.value; fetch()"
                 :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                    filter.status === tab.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50']">
+                    filter.status == tab.value ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50']">
                 {{ tab.label }}
             </button>
         </div>
@@ -52,11 +52,11 @@
                             class="btn-primary btn-sm" title="Launch">
                             <PlayIcon class="w-3.5 h-3.5" />
                         </button>
-                        <button v-if="camp.status === 'running'" @click="pause(camp)" class="btn-secondary btn-sm"
+                        <button v-if="camp.status == 'running'" @click="pause(camp)" class="btn-secondary btn-sm"
                             title="Pause">
                             <PauseIcon class="w-3.5 h-3.5" />
                         </button>
-                        <button v-if="camp.status === 'paused'" @click="resume(camp)" class="btn-primary btn-sm"
+                        <button v-if="camp.status == 'paused'" @click="resume(camp)" class="btn-primary btn-sm"
                             title="Resume">
                             <PlayIcon class="w-3.5 h-3.5" />
                         </button>
@@ -238,7 +238,7 @@ function subscribePusher() {
         if (!window.Echo) break
         const ch = window.Echo.private(`instance.${inst.instance_token}`)
         ch.listen('InstanceEvent', ({ event, payload }) => {
-            if (event === 'campaign.completed' || event === 'campaign.launched') {
+            if (event == 'campaign.completed' || event == 'campaign.launched') {
                 fetch()  // refresh on campaign lifecycle events
             }
         })
@@ -300,7 +300,7 @@ const onCreated = (camp) => {
 }
 
 const onUpdated = (camp) => {
-    const idx = campaigns.value.findIndex(c => c.id === camp.id)
+    const idx = campaigns.value.findIndex(c => c.id == camp.id)
     if (idx !== -1) campaigns.value[idx] = { ...campaigns.value[idx], ...camp }
     closeModal()
 }
@@ -311,7 +311,7 @@ const resume = async (c) => { await campaignApi.resume(c.id); updateStatus(c.id,
 const cancel = async (c) => { if (!confirm(`Cancel "${c.name}"?`)) return; await campaignApi.cancel(c.id); updateStatus(c.id, 'cancelled') }
 
 const updateStatus = (id, status) => {
-    const idx = campaigns.value.findIndex(c => c.id === id)
+    const idx = campaigns.value.findIndex(c => c.id == id)
     if (idx !== -1) campaigns.value[idx] = { ...campaigns.value[idx], status }
 }
 

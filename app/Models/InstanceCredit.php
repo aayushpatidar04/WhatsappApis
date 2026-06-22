@@ -89,12 +89,12 @@ class InstanceCredit extends Model
 
     public function isActive(): bool
     {
-        return $this->status === self::STATUS_ACTIVE;
+        return $this->status == self::STATUS_ACTIVE;
     }
 
     public function isQueued(): bool
     {
-        return $this->status === self::STATUS_QUEUED;
+        return $this->status == self::STATUS_QUEUED;
     }
 
     public function daysRemaining(): int

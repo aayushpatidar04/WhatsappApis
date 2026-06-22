@@ -25,7 +25,7 @@
                     <div class="grid grid-cols-1 gap-2 mt-1">
                         <button v-for="inst in instances" :key="inst.id" @click="form.instance_id = inst.id" :class="[
                             'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all',
-                            form.instance_id === inst.id
+                            form.instance_id == inst.id
                                 ? 'border-blue-500 bg-blue-50'
                                 : 'border-gray-200 hover:border-gray-300'
                         ]">
@@ -36,7 +36,7 @@
                                 <p class="font-medium text-gray-900 text-sm">{{ inst.name }}</p>
                                 <p class="text-xs text-gray-400 font-mono">{{ inst.phone_number }}</p>
                             </div>
-                            <CheckCircleIcon v-if="form.instance_id === inst.id"
+                            <CheckCircleIcon v-if="form.instance_id == inst.id"
                                 class="w-5 h-5 text-blue-600 ml-auto flex-shrink-0" />
                         </button>
                     </div>
@@ -58,7 +58,7 @@
                         <div class="flex flex-wrap gap-1.5 mt-1">
                             <button v-for="t in messageTypes" :key="t.value" @click="form.type = t.value" :class="[
                                 'px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                                form.type === t.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                form.type == t.value ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                             ]">
                                 {{ t.label }}
                             </button>
@@ -66,7 +66,7 @@
                     </div>
 
                     <!-- Text message -->
-                    <div v-if="form.type === 'text'">
+                    <div v-if="form.type == 'text'">
                         <label class="form-label">Message <span class="text-red-500">*</span></label>
                         <textarea v-model="form.message" class="form-input resize-none"
                             :class="{ 'border-red-400': errors.message }" rows="4" maxlength="4096"
@@ -94,7 +94,7 @@
                     </div>
 
                     <!-- Document specific -->
-                    <div v-if="form.type === 'document'" class="grid grid-cols-2 gap-3">
+                    <div v-if="form.type == 'document'" class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="form-label">Filename</label>
                             <input v-model="form.filename" type="text" class="form-input" placeholder="report.pdf" />
@@ -107,7 +107,7 @@
                     </div>
 
                     <!-- Location -->
-                    <div v-if="form.type === 'location'" class="grid grid-cols-2 gap-3">
+                    <div v-if="form.type == 'location'" class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="form-label">Latitude <span class="text-red-500">*</span></label>
                             <input v-model.number="form.latitude" type="number" step="any" class="form-input"
@@ -121,7 +121,7 @@
                     </div>
 
                     <!-- Poll -->
-                    <div v-if="form.type === 'poll'" class="space-y-3">
+                    <div v-if="form.type == 'poll'" class="space-y-3">
                         <div>
                             <label class="form-label">Question <span class="text-red-500">*</span></label>
                             <input v-model="form.question" type="text" class="form-input"
@@ -249,7 +249,7 @@ const send = async () => {
         form.media_url = ''
         setTimeout(() => { lastSent.value = null }, 5000)
     } catch (err) {
-        if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
+        if (err.response?.status == 422) Object.assign(errors, err.response.data.errors ?? {})
         else serverError.value = err.response?.data?.message ?? 'Failed to send.'
     } finally {
         sending.value = false

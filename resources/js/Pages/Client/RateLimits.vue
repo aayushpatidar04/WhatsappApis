@@ -79,8 +79,8 @@
                         </div>
                         <span class="text-xs text-gray-400 whitespace-nowrap">/min</span>
                         <button class="btn-primary btn-sm px-3" @click="saveInstanceRate(inst.id)"
-                            :disabled="savingInst === inst.id">
-                            {{ savingInst === inst.id ? '…' : 'Set' }}
+                            :disabled="savingInst == inst.id">
+                            {{ savingInst == inst.id ? '…' : 'Set' }}
                         </button>
                         <button v-if="instRates[inst.id] && instRates[inst.id] !== clientRate"
                             class="text-xs text-red-400 hover:text-red-600" @click="resetInstanceRate(inst.id)"
@@ -123,8 +123,8 @@
                             :placeholder="clientRate" @keyup.enter="saveUserRate(user.id)" />
                         <span class="text-xs text-gray-400 whitespace-nowrap">/min</span>
                         <button class="btn-primary btn-sm px-3" @click="saveUserRate(user.id)"
-                            :disabled="savingUser === user.id">
-                            {{ savingUser === user.id ? '…' : 'Set' }}
+                            :disabled="savingUser == user.id">
+                            {{ savingUser == user.id ? '…' : 'Set' }}
                         </button>
                         <button v-if="userRates[user.id] && userRates[user.id] !== clientRate"
                             class="text-xs text-red-400 hover:text-red-600" @click="resetUserRate(user.id)"

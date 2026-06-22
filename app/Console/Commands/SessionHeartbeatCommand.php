@@ -44,7 +44,7 @@ class SessionHeartbeatCommand extends Command
             $live = $baileys->getStatus($instance->instance_token);
             $liveStatus = $live['status'] ?? 'unknown';
 
-            if ($liveStatus === 'connected' && $instance->status !== WhatsappInstance::STATUS_ACTIVE) {
+            if ($liveStatus == 'connected' && $instance->status !== WhatsappInstance::STATUS_ACTIVE) {
                 // Baileys says connected but DB says otherwise — fix DB
                 $instance->update([
                     'status'            => WhatsappInstance::STATUS_ACTIVE,
@@ -53,7 +53,7 @@ class SessionHeartbeatCommand extends Command
                 $reconnected++;
 
             } elseif (in_array($liveStatus, ['not_initialised', 'disconnected', 'unknown'])
-                && $instance->status === WhatsappInstance::STATUS_ACTIVE) {
+                && $instance->status == WhatsappInstance::STATUS_ACTIVE) {
 
                 // Baileys says not connected but DB says active — mark disconnected
                 $instance->update(['status' => WhatsappInstance::STATUS_DISCONNECTED]);

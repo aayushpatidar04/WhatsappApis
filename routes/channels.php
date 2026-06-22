@@ -4,7 +4,7 @@ use App\Models\WhatsappInstance;
 use Illuminate\Support\Facades\Broadcast;
 
 Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
-    return (int) $user->id === (int) $id;
+    return (int) $user->id == (int) $id;
 });
 
 Broadcast::channel('instance.{token}', function ($user, string $token) {
@@ -20,11 +20,11 @@ Broadcast::channel('instance.{token}', function ($user, string $token) {
         return true;
     }
 
-    if ($user->isClientAdmin() && $instance->client_id === $user->client_id) {
+    if ($user->isClientAdmin() && $instance->client_id == $user->client_id) {
         return true;
     }
 
-    if ($instance->owner_type === 'user' && $instance->owner_id === $user->id) {
+    if ($instance->owner_type == 'user' && $instance->owner_id == $user->id) {
         return true;
     }
 
@@ -36,7 +36,7 @@ Broadcast::channel('instance.{token}', function ($user, string $token) {
  * Used for general user-level notifications (credit low, campaign done, etc.)
  */
 Broadcast::channel('user.{userId}', function ($user, int $userId) {
-    return (int) $user->id === $userId;
+    return (int) $user->id == $userId;
 });
 
 /**
@@ -44,5 +44,5 @@ Broadcast::channel('user.{userId}', function ($user, int $userId) {
  * Used for tenant-wide events (new user joined, bulk stats, etc.)
  */
 Broadcast::channel('client.{clientId}', function ($user, int $clientId) {
-    return $user->client_id === $clientId && $user->isAdminOrAbove();
+    return $user->client_id == $clientId && $user->isAdminOrAbove();
 });

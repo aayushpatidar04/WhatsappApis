@@ -263,7 +263,7 @@ const createClient = async () => {
 
         router.reload({ only: ['clients'] })
     } catch (err) {
-        if (err.response?.status === 422) {
+        if (err.response?.status == 422) {
             Object.assign(errors, err.response.data.errors ?? {})
         }
     } finally {

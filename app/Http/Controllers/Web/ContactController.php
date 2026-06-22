@@ -135,7 +135,7 @@ class ContactController extends Controller
         $nameCol = $this->findCol($headers, ['name', 'full_name', 'contact_name']);
         $phoneCol = $this->findCol($headers, ['phone', 'mobile', 'number', 'phone_number']);
 
-        if ($phoneCol === null) {
+        if ($phoneCol == null) {
             fclose($handle);
             return response()->json(['success' => false, 'message' => 'CSV must have a "phone" column.'], 422);
         }

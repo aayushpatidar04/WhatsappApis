@@ -93,7 +93,7 @@ class CampaignMessageJob implements ShouldQueue
         Log::error("CampaignMessageJob failed for recipient {$this->recipientId}: {$e->getMessage()}");
 
         $recipient = CampaignRecipient::find($this->recipientId);
-        if ($recipient && $recipient->status === 'queued') {
+        if ($recipient && $recipient->status == 'queued') {
             app(CampaignService::class)->markRecipientFailed($recipient, $e->getMessage());
         }
     }

@@ -92,12 +92,12 @@ class WhatsappInstance extends Model
 
     public function isActive(): bool
     {
-        return $this->status === self::STATUS_ACTIVE;
+        return $this->status == self::STATUS_ACTIVE;
     }
 
     public function isPending(): bool
     {
-        return $this->status === self::STATUS_PENDING;
+        return $this->status == self::STATUS_PENDING;
     }
 
     public function isConnectable(): bool
@@ -107,7 +107,7 @@ class WhatsappInstance extends Model
 
     public function isSendable(): bool
     {
-        return $this->status === self::STATUS_ACTIVE && !$this->isExpired();
+        return $this->status == self::STATUS_ACTIVE && !$this->isExpired();
     }
 
     public function isExpired(): bool

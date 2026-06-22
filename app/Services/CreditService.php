@@ -144,7 +144,7 @@ class CreditService
                 'status' => $status,
                 'starts_at' => $startsAt,
                 'expires_at' => $expiresAt,
-                'activated_at' => $status === 'active' ? now() : null,
+                'activated_at' => $status == 'active' ? now() : null,
                 'created_by' => $actorId,
             ]);
 
@@ -255,7 +255,7 @@ class CreditService
      */
     private function resolveWallet(WhatsappInstance $instance): array
     {
-        if ($instance->owner_type === 'client') {
+        if ($instance->owner_type == 'client') {
             $client = Client::lockForUpdate()->findOrFail($instance->owner_id);
             return [$client->id, 'client', $client->credit_balance, $client->id];
         }
@@ -266,7 +266,7 @@ class CreditService
 
     private function decrementWallet(int $ownerId, string $ownerType, int $amount): void
     {
-        if ($ownerType === 'client') {
+        if ($ownerType == 'client') {
             Client::where('id', $ownerId)->decrement('credit_balance', $amount);
             User::where('client_id', $ownerId)->where('role', 'client_admin')->decrement('credit_balance', $amount);
         } else {
@@ -276,7 +276,7 @@ class CreditService
 
     private function incrementWallet(int $ownerId, string $ownerType, int $amount): void
     {
-        if ($ownerType === 'client') {
+        if ($ownerType == 'client') {
             Client::where('id', $ownerId)->increment('credit_balance', $amount);
             User::where('client_id', $ownerId)->where('role', 'client_admin')->increment('credit_balance', $amount);
         } else {
@@ -286,7 +286,7 @@ class CreditService
 
     private function getBalance(int $ownerId, string $ownerType): int
     {
-        if ($ownerType === 'client') {
+        if ($ownerType == 'client') {
             return Client::findOrFail($ownerId)->credit_balance;
         }
         return User::findOrFail($ownerId)->credit_balance;

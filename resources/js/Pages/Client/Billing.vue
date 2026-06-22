@@ -31,7 +31,7 @@
       <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div v-for="pkg in packages" :key="pkg.id" @click="selectedPackage = pkg" :class="[
           'card cursor-pointer border-2 transition-all hover:shadow-md',
-          selectedPackage?.id === pkg.id ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-blue-200'
+          selectedPackage?.id == pkg.id ? 'border-blue-500 bg-blue-50' : 'border-transparent hover:border-blue-200'
         ]">
           <div class="text-center py-3">
             <p class="text-3xl font-bold text-gray-900">{{ pkg.credits }}</p>
@@ -39,7 +39,7 @@
           </div>
           <div class="border-t border-gray-100 my-3" />
           <div class="text-center">
-            <p class="text-2xl font-bold text-blue-600">{{ pkg.currency === 'INR' ? '₹' : '$' }}{{ pkg.price }}</p>
+            <p class="text-2xl font-bold text-blue-600">{{ pkg.currency == 'INR' ? '₹' : '$' }}{{ pkg.price }}</p>
             <p class="text-xs text-gray-400 mt-0.5">{{ pkg.name }}</p>
           </div>
         </div>
@@ -62,7 +62,7 @@
           <div class="flex justify-between border-t border-gray-100 pt-2 mt-2">
             <span class="font-bold">Total</span>
             <span class="text-lg font-bold text-blue-600">
-              {{ selectedPackage.currency === 'INR' ? '₹' : '$' }}{{ selectedPackage.price }}
+              {{ selectedPackage.currency == 'INR' ? '₹' : '$' }}{{ selectedPackage.price }}
             </span>
           </div>
         </div>
@@ -73,10 +73,10 @@
         <label class="text-sm font-semibold text-gray-700 mb-3 block">Payment Method</label>
         <div class="flex gap-3">
           <button v-for="gw in ['razorpay', 'stripe']" :key="gw" @click="selectedGateway = gw" :class="['flex-1 py-2 px-3 rounded-lg border-2 text-sm font-medium transition-all',
-            selectedGateway === gw
+            selectedGateway == gw
               ? 'border-blue-500 bg-blue-50 text-blue-700'
               : 'border-gray-200 text-gray-600 hover:border-gray-300']">
-            {{ gw === 'razorpay' ? 'Razorpay' : 'Stripe' }}
+            {{ gw == 'razorpay' ? 'Razorpay' : 'Stripe' }}
           </button>
         </div>
       </div>
@@ -100,7 +100,7 @@
       <button class="btn-primary w-full justify-center py-3" @click="startPayment" :disabled="processing">
         <span v-if="processing">Processing…</span>
         <span v-else>
-          Pay {{ selectedPackage.currency === 'INR' ? '₹' : '$' }}{{ selectedPackage.price }}
+          Pay {{ selectedPackage.currency == 'INR' ? '₹' : '$' }}{{ selectedPackage.price }}
         </span>
       </button>
     </div>
@@ -126,10 +126,10 @@
             <tr v-for="o in orders" :key="o.id" class="hover:bg-gray-50">
               <td class="py-3 px-4 font-mono text-xs text-gray-500">{{ o.order_number }}</td>
               <td class="py-3 px-4">{{ o.package?.name }}</td>
-              <td class="py-3 px-4 text-right font-semibold">{{ o.currency === 'INR' ? '₹' : '$' }}{{ o.amount }}</td>
+              <td class="py-3 px-4 text-right font-semibold">{{ o.currency == 'INR' ? '₹' : '$' }}{{ o.amount }}</td>
               <td class="py-3 px-4">
                 <span
-                  :class="o.status === 'paid' ? 'badge-active' : (o.status === 'pending' ? 'badge-pending' : 'badge-expired')">
+                  :class="o.status == 'paid' ? 'badge-active' : (o.status == 'pending' ? 'badge-pending' : 'badge-expired')">
                   {{ o.status }}
                 </span>
               </td>
@@ -161,7 +161,7 @@
             <tr v-for="tx in transactions" :key="tx.id" class="hover:bg-gray-50">
               <td class="py-3 px-4">
                 <span
-                  :class="['badge text-xs', tx.type === 'allocation' ? 'bg-red-100 text-red-700' : (tx.type === 'purchase' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')]">
+                  :class="['badge text-xs', tx.type == 'allocation' ? 'bg-red-100 text-red-700' : (tx.type == 'purchase' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-600')]">
                   {{ tx.type }}
                 </span>
               </td>
@@ -216,7 +216,7 @@ const startPayment = async () => {
       gateway: selectedGateway.value,
     })
 
-    if (selectedGateway.value === 'razorpay') {
+    if (selectedGateway.value == 'razorpay') {
       await openRazorpay(data.data)
     } else {
       await openStripe(data.data)

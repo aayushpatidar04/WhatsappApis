@@ -44,7 +44,7 @@ class MessageLimit extends Model
 
     public function isInstanceOverride(): bool
     {
-        return $this->owner_type === self::OWNER_TYPE_INSTANCE && $this->instance_id !== null;
+        return $this->owner_type == self::OWNER_TYPE_INSTANCE && $this->instance_id !== null;
     }
 
     public function isOwnerOverride(): bool
@@ -54,7 +54,7 @@ class MessageLimit extends Model
 
     public function isGlobalDefault(): bool
     {
-        return $this->owner_id === null && $this->owner_type === null && $this->instance_id === null;
+        return $this->owner_id == null && $this->owner_type == null && $this->instance_id == null;
     }
 
     public function scopeForOwner($query, int $ownerId, string $ownerType)

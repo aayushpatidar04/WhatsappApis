@@ -61,9 +61,9 @@
                         <p v-else class="text-xs text-gray-400 mt-0.5">All instances</p>
                     </div>
                     <div class="flex gap-1 flex-shrink-0">
-                        <button @click="pingWebhook(wh)" :disabled="pinging === wh.id" class="btn-secondary btn-sm"
+                        <button @click="pingWebhook(wh)" :disabled="pinging == wh.id" class="btn-secondary btn-sm"
                             title="Test ping">
-                            <BoltIcon class="w-4 h-4" :class="{ 'animate-pulse': pinging === wh.id }" />
+                            <BoltIcon class="w-4 h-4" :class="{ 'animate-pulse': pinging == wh.id }" />
                         </button>
                         <button @click="viewLogs(wh)" class="btn-secondary btn-sm" title="Delivery logs">
                             <ClipboardDocumentListIcon class="w-4 h-4" />
@@ -91,10 +91,10 @@
                     <div>
                         <p class="text-xs text-gray-400">Signing secret</p>
                         <code
-                            class="text-xs font-mono text-gray-600">{{ showSecret === wh.id ? wh.secret : '••••••••••••••••••••' }}</code>
+                            class="text-xs font-mono text-gray-600">{{ showSecret == wh.id ? wh.secret : '••••••••••••••••••••' }}</code>
                     </div>
                     <div class="flex gap-2">
-                        <button @click="showSecret = showSecret === wh.id ? null : wh.id"
+                        <button @click="showSecret = showSecret == wh.id ? null : wh.id"
                             class="text-gray-400 hover:text-gray-600">
                             <EyeIcon v-if="showSecret !== wh.id" class="w-4 h-4" />
                             <EyeSlashIcon v-else class="w-4 h-4" />
@@ -314,7 +314,7 @@ const saveWebhook = async () => {
                 events: form.events,
             }
             const { data } = await webhookApi.update(editingId.value, payload)
-            const idx = webhooks.value.findIndex(w => w.id === editingId.value)
+            const idx = webhooks.value.findIndex(w => w.id == editingId.value)
             if (idx !== -1) webhooks.value[idx] = data.data
         } else {
             // Create Flow
@@ -323,7 +323,7 @@ const saveWebhook = async () => {
         }
         showForm.value = false
     } catch (err) {
-        if (err.response?.status === 422) {
+        if (err.response?.status == 422) {
             Object.assign(errors, err.response.data.errors ?? {})
         } else {
             serverError.value = err.response?.data?.message ?? 'Failed to save webhook.'
@@ -335,7 +335,7 @@ const saveWebhook = async () => {
 
 const toggleActive = async (wh) => {
     const { data } = await webhookApi.update(wh.id, { is_active: !wh.is_active })
-    const idx = webhooks.value.findIndex(w => w.id === wh.id)
+    const idx = webhooks.value.findIndex(w => w.id == wh.id)
     if (idx !== -1) webhooks.value[idx] = data.data
 }
 

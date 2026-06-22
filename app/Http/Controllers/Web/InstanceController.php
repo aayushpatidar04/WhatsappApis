@@ -288,11 +288,11 @@ class InstanceController extends Controller
             return $instance;
 
         // Client admin: any instance in their tenant
-        if ($user->isClientAdmin() && $instance->client_id === $user->client_id)
+        if ($user->isClientAdmin() && $instance->client_id == $user->client_id)
             return $instance;
 
         // Regular user: only their own instances
-        if ($instance->owner_type === 'user' && $instance->owner_id === $user->id)
+        if ($instance->owner_type == 'user' && $instance->owner_id == $user->id)
             return $instance;
 
         abort(403, 'You do not have access to this instance.');
@@ -310,9 +310,9 @@ class InstanceController extends Controller
             'status' => $i->status,
             'owner_type' => $i->owner_type,
             'owner_id' => $i->owner_id,
-            'is_own' => $i->owner_type === 'client'
-                ? $i->owner_id === $user->client_id
-                : $i->owner_id === $user->id,
+            'is_own' => $i->owner_type == 'client'
+                ? $i->owner_id == $user->client_id
+                : $i->owner_id == $user->id,
             'credits_assigned' => $i->credits_assigned,
             'credits_remaining' => $i->creditsRemaining(),
             'days_until_expiry' => $i->daysUntilExpiry(),

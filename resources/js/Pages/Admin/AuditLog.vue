@@ -58,17 +58,17 @@
               <td class="py-3 px-4">
                 <button
                   v-if="log.new_values || log.old_values"
-                  @click="expanded = expanded === log.id ? null : log.id"
+                  @click="expanded = expanded == log.id ? null : log.id"
                   class="text-blue-500 text-xs hover:underline"
                 >
-                  {{ expanded === log.id ? 'Hide' : 'Details' }}
+                  {{ expanded == log.id ? 'Hide' : 'Details' }}
                 </button>
               </td>
             </tr>
 
             <!-- Expanded detail row -->
             <template v-for="log in logs" :key="`detail-${log.id}`">
-              <tr v-if="expanded === log.id" class="bg-blue-50">
+              <tr v-if="expanded == log.id" class="bg-blue-50">
                 <td colspan="6" class="px-4 py-3">
                   <div class="grid grid-cols-2 gap-4 text-xs font-mono">
                     <div v-if="log.old_values">
@@ -90,7 +90,7 @@
         <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
           <p class="text-xs text-gray-400">{{ pagination.total ?? 0 }} events</p>
           <div class="flex gap-2">
-            <button :disabled="page === 1" @click="goTo(page-1)" class="btn-secondary btn-sm px-3">‹</button>
+            <button :disabled="page == 1" @click="goTo(page-1)" class="btn-secondary btn-sm px-3">‹</button>
             <span class="text-xs text-gray-500 px-2 py-1.5">{{ page }} / {{ pagination.last_page ?? 1 }}</span>
             <button :disabled="page >= (pagination.last_page ?? 1)" @click="goTo(page+1)" class="btn-secondary btn-sm px-3">›</button>
           </div>

@@ -28,7 +28,7 @@
             <!-- Daily Revenue Bar Chart -->
             <div class="lg:col-span-2 card">
                 <h2 class="card-title mb-4">Daily Revenue</h2>
-                <div v-if="!daily.length || maxRevenue === 0"
+                <div v-if="!daily.length || maxRevenue == 0"
                     class="h-48 flex items-center justify-center text-gray-300 text-sm">
                     No revenue data for this period.
                 </div>
@@ -148,15 +148,15 @@
                             <td class="py-2.5 px-3 text-gray-800">{{ o.client?.name }}</td>
                             <td class="py-2.5 px-3 text-gray-600">{{ o.package?.name }}</td>
                             <td class="py-2.5 px-3 text-right font-semibold text-gray-900">
-                                {{ o.currency === 'INR' ? '₹' : '$' }}{{ o.amount }}
+                                {{ o.currency == 'INR' ? '₹' : '$' }}{{ o.amount }}
                             </td>
                             <td class="py-2.5 px-3 capitalize text-gray-500 text-xs">{{ o.gateway }}</td>
                             <td class="py-2.5 px-3">
                                 <span :class="{
-                                    'badge-active': o.status === 'paid',
-                                    'badge-pending': o.status === 'pending',
-                                    'badge-expired': o.status === 'failed',
-                                    'badge-disconnected': o.status === 'refunded',
+                                    'badge-active': o.status == 'paid',
+                                    'badge-pending': o.status == 'pending',
+                                    'badge-expired': o.status == 'failed',
+                                    'badge-disconnected': o.status == 'refunded',
                                 }">{{ o.status }}</span>
                             </td>
                             <td class="py-2.5 px-3 text-gray-400 text-xs">{{ fmtDate(o.paid_at ?? o.created_at) }}</td>

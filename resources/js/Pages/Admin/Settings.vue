@@ -22,7 +22,7 @@
         <div class="flex gap-1 mb-6 border-b border-gray-200">
             <button v-for="tab in tabs" :key="tab.key" @click="activeTab = tab.key" :class="[
                 'px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
-                activeTab === tab.key
+                activeTab == tab.key
                     ? 'border-blue-600 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             ]">
@@ -34,15 +34,15 @@
         <!-- Toast -->
         <Transition name="toast">
             <div v-if="toast.show" :class="['fixed top-20 right-6 z-50 px-4 py-3 rounded-xl shadow-2xl text-sm font-medium flex items-center gap-3',
-                toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white']">
-                <CheckCircleIcon v-if="toast.type === 'success'" class="w-5 h-5 flex-shrink-0" />
+                toast.type == 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white']">
+                <CheckCircleIcon v-if="toast.type == 'success'" class="w-5 h-5 flex-shrink-0" />
                 <XCircleIcon v-else class="w-5 h-5 flex-shrink-0" />
                 {{ toast.message }}
             </div>
         </Transition>
 
         <!-- ── GENERAL TAB ─────────────────────────────────────────────────────── -->
-        <div v-show="activeTab === 'general'">
+        <div v-show="activeTab == 'general'">
             <SettingsCard title="Platform Identity" description="Basic platform name and contact information.">
                 <SettingsRow label="Platform Name" description="Shown in emails, dashboard header and browser tab.">
                     <input v-model="form.app_name" type="text" class="form-input" maxlength="100" />
@@ -61,15 +61,15 @@
                     <ToggleSwitch v-model="form.maintenance_mode" />
                 </SettingsRow>
                 <div class="flex justify-end pt-2">
-                    <button @click="save('general')" class="btn-primary btn-sm" :disabled="saving === 'general'">
-                        {{ saving === 'general' ? 'Saving…' : 'Save General Settings' }}
+                    <button @click="save('general')" class="btn-primary btn-sm" :disabled="saving == 'general'">
+                        {{ saving == 'general' ? 'Saving…' : 'Save General Settings' }}
                     </button>
                 </div>
             </SettingsCard>
         </div>
 
         <!-- ── LIMITS TAB ──────────────────────────────────────────────────────── -->
-        <div v-show="activeTab === 'limits'">
+        <div v-show="activeTab == 'limits'">
             <SettingsCard title="Message Rate Limits"
                 description="Control how many messages per minute users can send.">
                 <SettingsRow label="Default Rate (msg/min)"
@@ -103,8 +103,8 @@
                     </div>
                 </SettingsRow>
                 <div class="flex justify-end pt-2">
-                    <button @click="save('limits')" class="btn-primary btn-sm" :disabled="saving === 'limits'">
-                        {{ saving === 'limits' ? 'Saving…' : 'Save Limit Settings' }}
+                    <button @click="save('limits')" class="btn-primary btn-sm" :disabled="saving == 'limits'">
+                        {{ saving == 'limits' ? 'Saving…' : 'Save Limit Settings' }}
                     </button>
                 </div>
             </SettingsCard>
@@ -119,15 +119,15 @@
                     </div>
                 </SettingsRow>
                 <div class="flex justify-end pt-2">
-                    <button @click="save('limits')" class="btn-primary btn-sm" :disabled="saving === 'limits'">
-                        {{ saving === 'limits' ? 'Saving…' : 'Save' }}
+                    <button @click="save('limits')" class="btn-primary btn-sm" :disabled="saving == 'limits'">
+                        {{ saving == 'limits' ? 'Saving…' : 'Save' }}
                     </button>
                 </div>
             </SettingsCard>
         </div>
 
         <!-- ── INSTANCE TAB ────────────────────────────────────────────────────── -->
-        <div v-show="activeTab === 'instance'">
+        <div v-show="activeTab == 'instance'">
             <SettingsCard title="Instance Lifecycle"
                 description="Control expiry warnings, grace periods, and reconnect behaviour.">
                 <SettingsRow label="Grace Period (Days)"
@@ -163,15 +163,15 @@
                     </div>
                 </SettingsRow>
                 <div class="flex justify-end pt-2">
-                    <button @click="save('instance')" class="btn-primary btn-sm" :disabled="saving === 'instance'">
-                        {{ saving === 'instance' ? 'Saving…' : 'Save Instance Settings' }}
+                    <button @click="save('instance')" class="btn-primary btn-sm" :disabled="saving == 'instance'">
+                        {{ saving == 'instance' ? 'Saving…' : 'Save Instance Settings' }}
                     </button>
                 </div>
             </SettingsCard>
         </div>
 
         <!-- ── PAYMENT TAB ─────────────────────────────────────────────────────── -->
-        <div v-show="activeTab === 'payment'">
+        <div v-show="activeTab == 'payment'">
             <SettingsCard title="Payment Gateway" description="Configure how clients purchase credits.">
                 <SettingsRow label="Active Gateway" description="Which payment processor handles credit purchases.">
                     <select v-model="form.payment_gateway" class="form-input w-auto">
@@ -194,8 +194,8 @@
                     <ToggleSwitch v-model="form.enable_billing" />
                 </SettingsRow>
                 <div class="flex justify-end pt-2">
-                    <button @click="save('payment')" class="btn-primary btn-sm" :disabled="saving === 'payment'">
-                        {{ saving === 'payment' ? 'Saving…' : 'Save Payment Settings' }}
+                    <button @click="save('payment')" class="btn-primary btn-sm" :disabled="saving == 'payment'">
+                        {{ saving == 'payment' ? 'Saving…' : 'Save Payment Settings' }}
                     </button>
                 </div>
             </SettingsCard>
@@ -225,7 +225,7 @@
         </div>
 
         <!-- ── NOTIFICATIONS TAB ───────────────────────────────────────────────── -->
-        <div v-show="activeTab === 'notifications'">
+        <div v-show="activeTab == 'notifications'">
             <SettingsCard title="Email Notifications" description="Control which automated emails the platform sends.">
                 <SettingsRow label="Expiry Warning Emails"
                     description="Send email to users when their instance is about to expire.">
@@ -246,8 +246,8 @@
                 </SettingsRow>
                 <div class="flex justify-end pt-2">
                     <button @click="save('notifications')" class="btn-primary btn-sm"
-                        :disabled="saving === 'notifications'">
-                        {{ saving === 'notifications' ? 'Saving…' : 'Save Notification Settings' }}
+                        :disabled="saving == 'notifications'">
+                        {{ saving == 'notifications' ? 'Saving…' : 'Save Notification Settings' }}
                     </button>
                 </div>
             </SettingsCard>
@@ -269,7 +269,7 @@
         </div>
 
         <!-- ── SECURITY TAB ────────────────────────────────────────────────────── -->
-        <div v-show="activeTab === 'security'">
+        <div v-show="activeTab == 'security'">
             <SettingsCard title="Security" description="Session, HTTPS, and API rate limiting settings.">
                 <SettingsRow label="Session Lifetime (minutes)"
                     description="Web dashboard session timeout. Users are logged out after inactivity.">
@@ -291,8 +291,8 @@
                     <ToggleSwitch v-model="form.require_https" />
                 </SettingsRow>
                 <div class="flex justify-end pt-2">
-                    <button @click="save('security')" class="btn-primary btn-sm" :disabled="saving === 'security'">
-                        {{ saving === 'security' ? 'Saving…' : 'Save Security Settings' }}
+                    <button @click="save('security')" class="btn-primary btn-sm" :disabled="saving == 'security'">
+                        {{ saving == 'security' ? 'Saving…' : 'Save Security Settings' }}
                     </button>
                 </div>
             </SettingsCard>

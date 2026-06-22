@@ -168,7 +168,7 @@ class DynamicQueueWorker extends Command
 
         $logFile = storage_path('logs/dynamic-queue-worker.log');
 
-        if (PHP_OS_FAMILY === 'Windows') {
+        if (PHP_OS_FAMILY == 'Windows') {
 
             $command =
                 'start /B "" "' . $php . '" "' . $artisan . '"' .
@@ -226,7 +226,7 @@ class DynamicQueueWorker extends Command
             return false;
         }
 
-        if (PHP_OS_FAMILY === 'Windows') {
+        if (PHP_OS_FAMILY == 'Windows') {
 
             exec("tasklist /FI \"PID eq {$pid}\"", $output);
 
@@ -251,7 +251,7 @@ class DynamicQueueWorker extends Command
             return;
         }
 
-        if (PHP_OS_FAMILY === 'Windows') {
+        if (PHP_OS_FAMILY == 'Windows') {
 
             exec("taskkill /PID {$pid} /F");
 

@@ -62,7 +62,7 @@
                     </div>
 
                     <!-- Empty state -->
-                    <div v-if="instances.length === 0" class="text-center py-12">
+                    <div v-if="instances.length == 0" class="text-center py-12">
                         <DevicePhoneMobileIcon class="w-12 h-12 text-gray-200 mx-auto mb-3" />
                         <p class="text-gray-400 text-sm">No instances yet</p>
                         <Link :href="route('user.instances')" class="btn-primary btn-sm mt-4 inline-flex">

@@ -318,9 +318,9 @@ class GatewayController extends Controller
 
         if ($user->isSuperAdmin())
             return $instance;
-        if ($user->isClientAdmin() && $instance->client_id === $user->client_id)
+        if ($user->isClientAdmin() && $instance->client_id == $user->client_id)
             return $instance;
-        if ($instance->owner_type === 'user' && $instance->owner_id === $user->id)
+        if ($instance->owner_type == 'user' && $instance->owner_id == $user->id)
             return $instance;
 
         abort(403);

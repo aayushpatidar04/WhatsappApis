@@ -72,7 +72,7 @@
                         :class="queueDepth > 100 ? 'bg-red-50' : queueDepth > 20 ? 'bg-yellow-50' : 'bg-green-50'">
                         <span class="text-sm font-medium"
                             :class="queueDepth > 100 ? 'text-red-700' : queueDepth > 20 ? 'text-yellow-700' : 'text-green-700'">
-                            {{ queueDepth === 0 ? 'Queue Empty' : `${queueDepth} jobs pending` }}
+                            {{ queueDepth == 0 ? 'Queue Empty' : `${queueDepth} jobs pending` }}
                         </span>
                         <span class="text-lg font-bold"
                             :class="queueDepth > 100 ? 'text-red-700' : queueDepth > 20 ? 'text-yellow-700' : 'text-green-600'">

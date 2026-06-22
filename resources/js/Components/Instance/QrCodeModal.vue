@@ -65,7 +65,7 @@
                                     <li>4. Point your camera at this QR</li>
                                 </ol>
                             </div>
-                            <button v-if="qrSecondsLeft === 0" class="btn-secondary w-full justify-center mt-4"
+                            <button v-if="qrSecondsLeft == 0" class="btn-secondary w-full justify-center mt-4"
                                 @click="refreshQr" :disabled="refreshing">
                                 <ArrowPathIcon class="w-4 h-4" :class="{ 'animate-spin': refreshing }" />
                                 {{ refreshing ? 'Refreshing…' : 'New QR Code' }}
@@ -123,10 +123,10 @@ let qrPollInterval = null
 
 // Extracted handler so we can stop listening to it specifically
 const handlePusherEvent = ({ event, payload }) => {
-    if (event === 'qr.updated') { qrCode.value = payload.qr; sessionStatus.value = 'qr_pending'; resetCountdown() }
-    if (event === 'session.connected') { isConnected.value = true; phoneNumber.value = payload.phone_number; sessionStatus.value = 'connected'; stopPolling(); clearCountdown(); emit('connected', { phone_number: phoneNumber.value }) }
-    if (event === 'session.disconnected') { sessionStatus.value = 'disconnected' }
-    if (event === 'session.error') { error.value = payload.error ?? 'Session error.' }
+    if (event == 'qr.updated') { qrCode.value = payload.qr; sessionStatus.value = 'qr_pending'; resetCountdown() }
+    if (event == 'session.connected') { isConnected.value = true; phoneNumber.value = payload.phone_number; sessionStatus.value = 'connected'; stopPolling(); clearCountdown(); emit('connected', { phone_number: phoneNumber.value }) }
+    if (event == 'session.disconnected') { sessionStatus.value = 'disconnected' }
+    if (event == 'session.error') { error.value = payload.error ?? 'Session error.' }
 }
 
 const statusDot = computed(() => ({
@@ -177,7 +177,7 @@ function startPolling() {
         try {
             const { data } = await instanceApi.qr(props.instance.id)
             if (data.qr && !qrCode.value) { qrCode.value = data.qr; sessionStatus.value = 'qr_pending'; resetCountdown() }
-            if (data.status === 'connected') { isConnected.value = true; stopPolling(); clearCountdown() }
+            if (data.status == 'connected') { isConnected.value = true; stopPolling(); clearCountdown() }
         } catch (_) { }
     }, 5000)
 }

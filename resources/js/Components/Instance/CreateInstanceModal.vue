@@ -118,7 +118,7 @@ const submit = async () => {
         })
         emit('created', data.data)
     } catch (err) {
-        if (err.response?.status === 422) {
+        if (err.response?.status == 422) {
             Object.assign(errors, err.response.data.errors ?? {})
         } else {
             serverError.value = err.response?.data?.message ?? 'Something went wrong.'

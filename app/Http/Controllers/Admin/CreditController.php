@@ -35,7 +35,7 @@ class CreditController extends Controller
 
         $actor = Auth::user();
 
-        if ($validated['owner_type'] === 'client') {
+        if ($validated['owner_type'] == 'client') {
             $owner = Client::findOrFail($validated['owner_id']);
             $tx = $this->creditService->addToClient(
                 client: $owner,

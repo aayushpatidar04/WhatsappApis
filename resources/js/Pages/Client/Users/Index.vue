@@ -195,7 +195,7 @@ const createUser = async () => {
         Object.assign(form, { name: '', email: '', password: '', credits: 0 })
         router.reload({ only: ['users'] })
     } catch (err) {
-        if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
+        if (err.response?.status == 422) Object.assign(errors, err.response.data.errors ?? {})
     } finally { loading.value = false }
 }
 

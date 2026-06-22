@@ -182,7 +182,7 @@ const createToken = async () => {
         newToken.value = data.data.token  // plain token — shown once
         await fetchTokens()
     } catch (err) {
-        if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
+        if (err.response?.status == 422) Object.assign(errors, err.response.data.errors ?? {})
         else serverError.value = err.response?.data?.message ?? 'Failed.'
     } finally {
         creating.value = false

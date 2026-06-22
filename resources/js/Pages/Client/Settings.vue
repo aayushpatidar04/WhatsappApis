@@ -9,7 +9,7 @@
         <div class="flex gap-1 mb-6 border-b border-gray-200">
             <button v-for="tab in ['company', 'profile', 'security', 'activity']" :key="tab" @click="activeTab = tab"
                 :class="['px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px',
-                    activeTab === tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700']">
+                    activeTab == tab ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700']">
                 {{ tab.charAt(0).toUpperCase() + tab.slice(1) }}
             </button>
         </div>
@@ -17,13 +17,13 @@
         <!-- Toast -->
         <Transition name="toast">
             <div v-if="toast.show" :class="['fixed top-20 right-6 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-medium',
-                toast.type === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white']">
+                toast.type == 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white']">
                 {{ toast.message }}
             </div>
         </Transition>
 
         <!-- Company Tab -->
-        <div v-show="activeTab === 'company'">
+        <div v-show="activeTab == 'company'">
             <div class="card max-w-2xl">
                 <h2 class="text-lg font-semibold text-gray-900 mb-5">Company Information</h2>
                 <form @submit.prevent="saveCompany" class="space-y-5">
@@ -59,7 +59,7 @@
         </div>
 
         <!-- Profile Tab -->
-        <div v-show="activeTab === 'profile'">
+        <div v-show="activeTab == 'profile'">
             <div class="card max-w-2xl">
                 <h2 class="text-lg font-semibold text-gray-900 mb-5">Your Profile</h2>
                 <form @submit.prevent="saveProfile" class="space-y-5">
@@ -79,7 +79,7 @@
         </div>
 
         <!-- Security Tab -->
-        <div v-show="activeTab === 'security'">
+        <div v-show="activeTab == 'security'">
             <div class="space-y-6">
                 <!-- Password change -->
                 <div class="card max-w-2xl">
@@ -115,7 +115,7 @@
         </div>
 
         <!-- Activity Tab -->
-        <div v-show="activeTab === 'activity'">
+        <div v-show="activeTab == 'activity'">
             <div class="card">
                 <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
                 <div v-if="loadingActivity" class="text-center py-8">

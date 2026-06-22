@@ -20,7 +20,7 @@ export function useInstances() {
     const role = page.props.auth?.user?.role
 
     // Pick correct API prefix based on role
-    const prefix = role === 'client_admin' ? '/client' : '/dashboard'
+    const prefix = role == 'client_admin' ? '/client' : '/dashboard'
     // ── State ─────────────────────────────────────────────────────────────────
     const instances = ref([])
     const loading = ref(false)
@@ -81,11 +81,11 @@ export function useInstances() {
     // ── In-place update — NO router.reload() ─────────────────────────────────
 
     function updateInstance(token, event, payload) {
-        // const idx = instances.value.findIndex(i => i.instance_token === token)
-        // if (idx === -1) return
+        // const idx = instances.value.findIndex(i => i.instance_token == token)
+        // if (idx == -1) return
         // const inst = { ...instances.value[idx] }  // shallow copy
 
-        const inst = instances.value.find(i => i.instance_token === token)
+        const inst = instances.value.find(i => i.instance_token == token)
         if (!inst) return
 
         switch (event) {
@@ -153,8 +153,8 @@ export function useInstances() {
     }
 
     function removeInstance(id) {
-        const idx = instances.value.findIndex(i => i.id === id)
-        if (idx === -1) return
+        const idx = instances.value.findIndex(i => i.id == id)
+        if (idx == -1) return
         const token = instances.value[idx].instance_token
         unsubscribeInstance(token)
         instances.value.splice(idx, 1)
@@ -162,8 +162,8 @@ export function useInstances() {
 
     // Update a single instance after a PATCH (e.g. top-up, rename)
     function refreshInstance(updated) {
-        const idx = instances.value.findIndex(i => i.id === updated.id)
-        if (idx === -1) return
+        const idx = instances.value.findIndex(i => i.id == updated.id)
+        if (idx == -1) return
         instances.value[idx] = { ...instances.value[idx], ...updated }
     }
 
@@ -179,7 +179,7 @@ export function useInstances() {
 
     // ── Computed ──────────────────────────────────────────────────────────────
 
-    const activeCount = computed(() => instances.value.filter(i => i.status === 'active').length)
+    const activeCount = computed(() => instances.value.filter(i => i.status == 'active').length)
     const pendingCount = computed(() => instances.value.filter(i => ['pending', 'disconnected'].includes(i.status)).length)
     const suspendedCount = computed(() => instances.value.filter(i => ['suspended', 'expired'].includes(i.status)).length)
 

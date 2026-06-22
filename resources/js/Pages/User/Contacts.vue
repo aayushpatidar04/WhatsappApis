@@ -127,7 +127,7 @@
             <div class="flex items-center justify-between px-4 py-3 border-t border-gray-100">
                 <p class="text-xs text-gray-400">{{ pagination.total ?? 0 }} contacts</p>
                 <div class="flex gap-2">
-                    <button :disabled="page === 1" @click="goTo(page - 1)" class="btn-secondary btn-sm px-3">‹</button>
+                    <button :disabled="page == 1" @click="goTo(page - 1)" class="btn-secondary btn-sm px-3">‹</button>
                     <span class="text-xs text-gray-500 px-2 py-1.5">{{ page }} / {{ pagination.last_page ?? 1 }}</span>
                     <button :disabled="page >= (pagination.last_page ?? 1)" @click="goTo(page + 1)"
                         class="btn-secondary btn-sm px-3">›</button>
@@ -276,7 +276,7 @@
                                         </div>
                                         <div class="flex gap-2 items-center">
                                             <!-- Accordion arrow -->
-                                            <svg :class="{ 'rotate-90': expandedGroupId === g.id }"
+                                            <svg :class="{ 'rotate-90': expandedGroupId == g.id }"
                                                 class="w-4 h-4 text-gray-400 transition-transform" fill="none"
                                                 stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -292,7 +292,7 @@
 
                                     <!-- Members list (accordion content) -->
                                     <Transition name="fade">
-                                        <div v-if="expandedGroupId === g.id && g.contacts && g.contacts.length"
+                                        <div v-if="expandedGroupId == g.id && g.contacts && g.contacts.length"
                                             class="mt-3 space-y-2 pl-3 border-l border-gray-200">
                                             <div v-for="c in g.contacts" :key="c.id"
                                                 class="flex items-center justify-between text-xs bg-gray-50 px-2 py-1 rounded">
@@ -359,7 +359,7 @@ const form = reactive({ name: '', phone: '', email: '', tags: [] })
 const errors = reactive({})
 const tagsInput = ref('')
 
-const allSelected = computed(() => contacts.value.length > 0 && selected.value.length === contacts.value.length)
+const allSelected = computed(() => contacts.value.length > 0 && selected.value.length == contacts.value.length)
 
 let debounceTimer = null
 const debouncedFetch = () => { clearTimeout(debounceTimer); debounceTimer = setTimeout(fetch, 400) }
@@ -412,7 +412,7 @@ const saveContact = async () => {
     try {
         if (editingContact.value) {
             const { data } = await contactApi.update(editingContact.value.id, payload)
-            const idx = contacts.value.findIndex(c => c.id === editingContact.value.id)
+            const idx = contacts.value.findIndex(c => c.id == editingContact.value.id)
             if (idx !== -1) contacts.value[idx] = data.data
         } else {
             const { data } = await contactApi.create(payload)
@@ -421,7 +421,7 @@ const saveContact = async () => {
         }
         closeForm()
     } catch (err) {
-        if (err.response?.status === 422) Object.assign(errors, err.response.data.errors ?? {})
+        if (err.response?.status == 422) Object.assign(errors, err.response.data.errors ?? {})
         else alert(err.response?.data?.message ?? 'Failed to save.')
     } finally {
         saving.value = false
@@ -469,7 +469,7 @@ const createGroup = async () => {
 }
 
 const toggleGroup = (groupId) => {
-    expandedGroupId.value = expandedGroupId.value === groupId ? null : groupId
+    expandedGroupId.value = expandedGroupId.value == groupId ? null : groupId
 }
 
 const confirmDeleteGroup = (groupId) => {
@@ -491,7 +491,7 @@ const handleDeleteConfirm = async (confirmed) => {
 const handleRemoveConfirm = async (confirmed) => {
     if (confirmed && confirmRemove.value.groupId && confirmRemove.value.contactId) {
         await contactApi.removeFromGroup(confirmRemove.value.groupId, confirmRemove.value.contactId)
-        const group = groups.value.find(g => g.id === confirmRemove.value.groupId)
+        const group = groups.value.find(g => g.id == confirmRemove.value.groupId)
         if (group) {
             group.contacts = group.contacts.filter(c => c.id !== confirmRemove.value.contactId)
             group.contacts_count--

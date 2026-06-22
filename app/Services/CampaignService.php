@@ -255,7 +255,7 @@ class CampaignService
             return;
 
         $done = $campaign->sent_count + $campaign->failed_count;
-        if ($done >= $campaign->total_recipients && $campaign->status === Campaign::STATUS_RUNNING) {
+        if ($done >= $campaign->total_recipients && $campaign->status == Campaign::STATUS_RUNNING) {
             $campaign->update([
                 'status' => Campaign::STATUS_COMPLETED,
                 'completed_at' => now(),

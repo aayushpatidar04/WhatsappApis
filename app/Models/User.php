@@ -72,17 +72,17 @@ class User extends Authenticatable
 
     public function isSuperAdmin(): bool
     {
-        return $this->role === 'super_admin';
+        return $this->role == 'super_admin';
     }
 
     public function isClientAdmin(): bool
     {
-        return $this->role === 'client_admin';
+        return $this->role == 'client_admin';
     }
 
     public function isUser(): bool
     {
-        return $this->role === 'user';
+        return $this->role == 'user';
     }
 
     public function isAdminOrAbove(): bool
@@ -97,7 +97,7 @@ class User extends Authenticatable
      */
     public function belongsToClient(int $clientId): bool
     {
-        return $this->client_id === $clientId;
+        return $this->client_id == $clientId;
     }
 
     // ─── Credit helpers ───────────────────────────────────────────────────────

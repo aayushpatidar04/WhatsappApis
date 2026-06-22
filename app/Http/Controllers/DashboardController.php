@@ -161,7 +161,7 @@ class DashboardController extends Controller
             'activated_at' => $i->activated_at?->toIso8601String(),
             'created_at' => $i->created_at->toIso8601String(),
             'webhook_url' => $i->webhook_url,
-            'is_own' => $i->owner_type === 'client' && $i->owner_id === $client->id,
+            'is_own' => $i->owner_type == 'client' && $i->owner_id == $client->id,
         ]);
 
         return Inertia::render('Client/Instances', compact('instances'));

@@ -16,8 +16,8 @@
             <button v-for="cat in ['all', 'text', 'image', 'video', 'document', 'poll']" :key="cat"
                 @click="filter.category = cat"
                 :class="['px-3 py-1.5 rounded-lg text-xs font-medium transition-colors',
-                    filter.category === cat ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50']">
-                {{ cat === 'all' ? 'All Templates' : cat.charAt(0).toUpperCase() + cat.slice(1) }}
+                    filter.category == cat ? 'bg-blue-600 text-white' : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50']">
+                {{ cat == 'all' ? 'All Templates' : cat.charAt(0).toUpperCase() + cat.slice(1) }}
             </button>
         </div>
 
@@ -128,8 +128,8 @@ const filter = reactive({ category: 'all' })
 const form = reactive({ name: '', category: 'text', body: '', description: '', variables: [] })
 
 const filteredTemplates = computed(() => {
-    if (filter.category === 'all') return templates.value
-    return templates.value.filter(t => t.category === filter.category)
+    if (filter.category == 'all') return templates.value
+    return templates.value.filter(t => t.category == filter.category)
 })
 
 const preview = computed(() => {
@@ -154,7 +154,7 @@ const save = async () => {
     try {
         if (editingTemplate.value) {
             const { data } = await webHttp.patch(`/client/templates/${editingTemplate.value.id}`, form)
-            const idx = templates.value.findIndex(t => t.id === editingTemplate.value.id)
+            const idx = templates.value.findIndex(t => t.id == editingTemplate.value.id)
             if (idx !== -1) templates.value[idx] = data.data
         } else {
             const { data } = await webHttp.post('/client/templates', form)
